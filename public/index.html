@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Yassin Amr — Web Designer &amp; Portfolio</title>
+  <meta name="description" content="Portfolio of Yassin Amr, web designer in Giza, Egypt. Every card is built from the live data of the website it showcases.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b101c'/%3E%3Ctext x='32' y='42' font-family='Arial,sans-serif' font-size='26' font-weight='bold' text-anchor='middle' fill='%23e9b949'%3EYA%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ambient background -->
+  <div class="bg" aria-hidden="true">
+    <div class="glow glow-gold"></div>
+    <div class="glow glow-violet"></div>
+    <div class="grid-lines"></div>
+  </div>
+
+  <!-- ============ NAV ============ -->
+  <header class="nav" id="nav">
+    <a class="brand" href="#top" aria-label="Yassin Amr — home">
+      <span class="brand-mark">YA</span>
+      <span class="brand-name">Yassin&nbsp;Amr<em class="brand-dot">.</em></span>
+    </a>
+
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#work" data-i18n="nav.work">My Work</a>
+      <a href="#about" data-i18n="nav.about">About</a>
+      <a href="#contact" data-i18n="nav.contact">Contact</a>
+    </nav>
+
+    <div class="lang-toggle" dir="ltr" role="group" aria-label="Language">
+      <span class="lang-thumb" aria-hidden="true"></span>
+      <button type="button" data-lang="en" class="active">EN</button>
+      <button type="button" data-lang="ar">عربي</button>
+    </div>
+  </header>
+
+  <main id="top">
+
+    <!-- ============ HERO ============ -->
+    <section class="hero">
+      <p class="eyebrow reveal"><span class="eyebrow-dot" aria-hidden="true"></span><span data-i18n="hero.eyebrow">Web Designer — Giza, Egypt</span></p>
+      <h1 class="hero-title reveal" data-delay="90">
+        <span data-i18n-html="hero.title">I design <span class="grad">websites</span><br>people remember.</span>
+      </h1>
+      <p class="hero-sub reveal" data-delay="180" data-i18n="hero.sub">
+        This is my portfolio — every card below is generated straight from the live
+        website it showcases. Paste a link and watch it become a card.
+      </p>
+      <div class="hero-cta reveal" data-delay="270">
+        <a class="btn btn-gold" href="#work"><span data-i18n="hero.cta1">Browse my work</span><span class="btn-arrow" aria-hidden="true">→</span></a>
+        <button class="btn btn-ghost" type="button" id="hero-add"><span data-i18n="hero.cta2">Add a project</span></button>
+      </div>
+      <div class="stats reveal" data-delay="360">
+        <div class="stat">
+          <strong id="stat-projects">0</strong>
+          <span data-i18n="stat.projects">Projects</span>
+        </div>
+        <div class="stat-sep" aria-hidden="true"></div>
+        <div class="stat">
+          <strong data-i18n="stat.responsive">100%</strong>
+          <span data-i18n="stat.responsive-label">Responsive</span>
+        </div>
+        <div class="stat-sep" aria-hidden="true"></div>
+        <div class="stat">
+          <strong data-i18n="stat.care">∞</strong>
+          <span data-i18n="stat.care-label">Pixels of care</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ MARQUEE ============ -->
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee-track" id="marquee-track"></div>
+    </div>
+
+    <!-- ============ WORK ============ -->
+    <section class="work section" id="work">
+      <div class="section-head reveal">
+        <p class="section-kicker" data-i18n="work.kicker">Portfolio</p>
+        <h2 class="section-title" data-i18n="work.title">My Work</h2>
+        <p class="section-sub" data-i18n="work.sub">Each card is built from the live website — its title, description and image are pulled straight from the page.</p>
+      </div>
+
+      <form class="add-bar reveal" id="add-form" data-delay="120">
+        <label class="add-input">
+          <span class="add-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          </span>
+          <input type="text" id="url-input" name="url" autocomplete="off" spellcheck="false"
+                 placeholder="Paste a website link — e.g. https://yoursite.com" data-i18n-ph="form.placeholder" aria-describedby="hint">
+        </label>
+        <button class="btn btn-gold add-btn" type="submit" id="add-btn">
+          <span class="spinner" id="add-spinner" hidden aria-hidden="true"></span>
+          <span id="add-label" data-i18n="form.btn">Analyze &amp; Add</span>
+        </button>
+      </form>
+      <p class="hint reveal" id="hint" data-delay="180" data-i18n="form.hint">
+        How it works: I read the site’s public data (title, description, image, favicon) and build the card for you — no typing.
+      </p>
+
+      <div class="grid" id="grid"></div>
+
+      <div class="empty" id="empty" hidden>
+        <div class="empty-art" aria-hidden="true">
+          <svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18"/><circle cx="6.5" cy="6.5" r=".6" fill="currentColor"/><circle cx="9" cy="6.5" r=".6" fill="currentColor"/></svg>
+        </div>
+        <h3 data-i18n="empty.title">No projects yet</h3>
+        <p data-i18n="empty.sub">Paste your first website link above and I’ll build the card for you.</p>
+      </div>
+    </section>
+
+    <!-- ============ ABOUT ============ -->
+    <section class="about section" id="about">
+      <div class="about-card reveal">
+        <div class="about-glow" aria-hidden="true"></div>
+        <div class="avatar" aria-hidden="true">YA</div>
+        <p class="section-kicker" data-i18n="about.kicker">Who I am</p>
+        <h2 class="section-title" data-i18n="about.title">About me</h2>
+        <p class="about-text" data-i18n="about.text">
+          I’m Yassin Amr, a web designer based in Giza, Egypt. I turn ideas into fast,
+          elegant and easy-to-use websites — from landing pages to full e-commerce
+          stores. Every project in this portfolio links straight to the live site,
+          so you can click through and explore for yourself.
+        </p>
+        <ul class="tags" id="tags"></ul>
+      </div>
+    </section>
+
+    <!-- ============ CONTACT / FOOTER ============ -->
+    <section class="contact section" id="contact">
+      <div class="contact-inner">
+        <p class="section-kicker reveal" data-i18n="contact.kicker">Contact</p>
+        <h2 class="contact-title reveal" data-delay="80" data-i18n-html="contact.title">Let’s build something <span class="grad">great</span>.</h2>
+        <p class="contact-sub reveal" data-delay="160" data-i18n="contact.sub">Have a project in mind? My phone is one tap away.</p>
+
+        <div class="contact-card reveal" data-delay="240">
+          <div class="contact-id">
+            <span class="contact-role" data-i18n="contact.role">Web Designer</span>
+            <strong class="contact-name" data-i18n="contact.name">Yassin Amr</strong>
+          </div>
+          <div class="contact-actions">
+            <a class="btn btn-gold" href="tel:+201141362626" id="call-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              <span class="btn-text"><span class="btn-small" data-i18n="contact.call">Call</span><b class="phone-num" data-i18n="contact.phoneDisplay">+20 114 136 2626</b></span>
+            </a>
+            <a class="btn btn-ghost" href="https://wa.me/201141362626" target="_blank" rel="noopener">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+              <span data-i18n="contact.whatsapp">WhatsApp</span>
+            </a>
+            <button class="btn btn-ghost" type="button" id="copy-phone">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span id="copy-label" data-i18n="contact.copy">Copy number</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <footer class="footer">
+        <span data-i18n="footer.left">Yassin Amr — Web Designer, Giza, Egypt</span>
+        <span class="footer-phone" dir="ltr">0114 136 2626</span>
+        <span data-i18n="footer.right">© 2026 · Designed &amp; built by Yassin Amr</span>
+      </footer>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="js/parse.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
