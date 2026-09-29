@@ -1,0 +1,54 @@
+[
+  {
+    "id": "demo-1",
+    "demo": true,
+    "url": "https://example.com",
+    "host": "example.com",
+    "title": "Saveur — Fine Dining",
+    "titleAr": "سافور — مطعم فاخر",
+    "description": "Restaurant website with an animated menu, table reservation flow and a gold-on-charcoal identity.",
+    "descriptionAr": "موقع مطعم بقائمة طعام متحركة ونظام حجز طاولات وهوية ذهبية على خلفية داكنة.",
+    "image": "/img/screen-1.jpg",
+    "favicon": null,
+    "tag": "Web Design"
+  },
+  {
+    "id": "demo-2",
+    "demo": true,
+    "url": "https://example.com",
+    "host": "example.com",
+    "title": "Maison — Fashion Store",
+    "titleAr": "ميزون — متجر أزياء",
+    "description": "Full e-commerce experience: editorial hero, product grid, filters and a checkout that converts.",
+    "descriptionAr": "متجر إلكتروني متكامل: واجهة تحريرية، شبكة منتجات، فلاتر، وسلة شراء تحقق مبيعات.",
+    "image": "/img/screen-2.jpg",
+    "favicon": null,
+    "tag": "E-Commerce"
+  },
+  {
+    "id": "demo-3",
+    "demo": true,
+    "url": "https://example.com",
+    "host": "example.com",
+    "title": "Nexora — SaaS Dashboard",
+    "titleAr": "نكسورا — لوحة تحكم SaaS",
+    "description": "Landing page and analytics dashboard UI with glass panels, live charts and a pricing table.",
+    "descriptionAr": "صفحة هبوط ولوحة تحليلات بتصميم زجاجي ورسوم بيانية حية وجدول أسعار.",
+    "image": "/img/screen-3.jpg",
+    "favicon": null,
+    "tag": "UI / UX"
+  },
+  {
+    "id": "demo-4",
+    "demo": true,
+    "url": "https://example.com",
+    "host": "example.com",
+    "title": "Pulse — Motion Studio",
+    "titleAr": "بالس — استوديو موشن",
+    "description": "Agency portfolio with a showreel player, oversized typography and a neon video grid.",
+    "descriptionAr": "بورتفوليو وكالة مع مشغل شوريل وخطوط ضخمة وشبكة فيديوهات نيون.",
+    "image": "/img/screen-4.jpg",
+    "favicon": null,
+    "tag": "Motion"
+  }
+]

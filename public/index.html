@@ -1,177 +1,317 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Yassin Amr — Web Designer &amp; Portfolio</title>
-  <meta name="description" content="Portfolio of Yassin Amr, web designer in Giza, Egypt. Every card is built from the live data of the website it showcases.">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b101c'/%3E%3Ctext x='32' y='42' font-family='Arial,sans-serif' font-size='26' font-weight='bold' text-anchor='middle' fill='%23e9b949'%3EYA%3C/text%3E%3C/svg%3E">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#04050c">
+<title>T.W.E Designer — Official</title>
+<meta name="description" content="T.W.E Designer — graphic design, websites, animation, video editing, branding and everything in between. Official studio site.">
+<meta property="og:title" content="T.W.E Designer — Official">
+<meta property="og:description" content="Graphic design · Websites · Animation · Video editing · Branding. A flood of creative services.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2321d4fd'/%3E%3Cstop offset='.55' stop-color='%238b5cf6'/%3E%3Cstop offset='1' stop-color='%23ffc861'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='%2306070f'/%3E%3Ctext x='32' y='41' font-family='Arial,Helvetica,sans-serif' font-size='21' font-weight='bold' text-anchor='middle' fill='url(%23g)'%3ETWE%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script>
+  /* set language + direction before first paint (no flash) */
+  (function () {
+    try {
+      var saved = localStorage.getItem('twe-lang');
+      var lang = saved || ((navigator.language || 'en').toLowerCase().startsWith('ar') ? 'ar' : 'en');
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+      if (sessionStorage.getItem('twe-intro-seen')) document.documentElement.classList.add('intro-skip');
+    } catch (e) {}
+  })();
+</script>
 </head>
 <body>
 
-  <!-- ambient background -->
-  <div class="bg" aria-hidden="true">
-    <div class="glow glow-gold"></div>
-    <div class="glow glow-violet"></div>
-    <div class="grid-lines"></div>
+<!-- ======================= INTRO / SPLASH ======================= -->
+<div class="intro" id="intro" role="presentation">
+  <canvas class="intro-particles" id="intro-particles" aria-hidden="true"></canvas>
+  <div class="intro-rings" aria-hidden="true"><span></span><span></span><span></span></div>
+
+  <div class="intro-stage">
+    <div class="intro-logo" aria-label="T.W.E Designer">
+      <span class="il" style="--i:0">T</span><span class="idot" style="--i:1">.</span>
+      <span class="il" style="--i:2">W</span><span class="idot" style="--i:3">.</span>
+      <span class="il" style="--i:4">E</span>
+      <span class="intro-sweep" aria-hidden="true"></span>
+    </div>
+    <div class="intro-word">
+      <span class="intro-designer">DESIGNER</span>
+      <span class="intro-line" aria-hidden="true"></span>
+    </div>
+    <p class="intro-tag" id="intro-tag">Design · Web · Motion · Everything</p>
   </div>
 
-  <!-- ============ NAV ============ -->
-  <header class="nav" id="nav">
-    <a class="brand" href="#top" aria-label="Yassin Amr — home">
-      <span class="brand-mark">YA</span>
-      <span class="brand-name">Yassin&nbsp;Amr<em class="brand-dot">.</em></span>
-    </a>
+  <div class="intro-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <button class="intro-skip" id="intro-skip" type="button">Skip</button>
+  <div class="intro-progress" aria-hidden="true"><i></i></div>
+</div>
 
-    <nav class="nav-links" aria-label="Primary">
-      <a href="#work" data-i18n="nav.work">My Work</a>
-      <a href="#about" data-i18n="nav.about">About</a>
-      <a href="#contact" data-i18n="nav.contact">Contact</a>
-    </nav>
+<!-- ======================= AMBIENT BACKGROUND ======================= -->
+<div class="bg" aria-hidden="true">
+  <div class="glow glow-cyan"></div>
+  <div class="glow glow-violet"></div>
+  <div class="glow glow-gold"></div>
+  <div class="grid-lines"></div>
+  <div class="noise"></div>
+</div>
 
+<!-- ======================= NAV ======================= -->
+<header class="nav" id="nav">
+  <a class="brand" href="#top" aria-label="T.W.E Designer — home">
+    <span class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 48 48" width="26" height="26" fill="none">
+        <defs><linearGradient id="bm" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#21d4fd"/><stop offset=".55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#ffc861"/>
+        </linearGradient></defs>
+        <path d="M6 12h36M24 12v28" stroke="url(#bm)" stroke-width="4" stroke-linecap="round"/>
+        <path d="M10 26l6 14 8-20 8 20 6-14" stroke="url(#bm)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".55"/>
+      </svg>
+    </span>
+    <span class="brand-name">T.W.E<em> Designer</em></span>
+  </a>
+
+  <nav class="nav-links" aria-label="Primary">
+    <a href="#services" data-i18n="nav.services">Services</a>
+    <a href="#work" data-i18n="nav.work">Our Work</a>
+    <a href="#about" data-i18n="nav.about">About</a>
+    <a href="#contact" data-i18n="nav.contact">Contact</a>
+  </nav>
+
+  <div class="nav-right">
     <div class="lang-toggle" dir="ltr" role="group" aria-label="Language">
       <span class="lang-thumb" aria-hidden="true"></span>
-      <button type="button" data-lang="en" class="active">EN</button>
+      <button type="button" data-lang="en">EN</button>
       <button type="button" data-lang="ar">عربي</button>
     </div>
-  </header>
+    <button class="owner-btn" id="owner-btn" type="button" data-i18n-title="owner.open" title="Owner login">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+      <span class="owner-btn-label" id="owner-btn-label" data-i18n="owner.btn">Owner</span>
+      <span class="owner-dot" id="owner-dot" hidden aria-hidden="true"></span>
+    </button>
+    <button class="burger" id="burger" type="button" aria-label="Menu" aria-expanded="false"><i></i><i></i><i></i></button>
+  </div>
+</header>
 
-  <main id="top">
+<main id="top">
 
-    <!-- ============ HERO ============ -->
-    <section class="hero">
-      <p class="eyebrow reveal"><span class="eyebrow-dot" aria-hidden="true"></span><span data-i18n="hero.eyebrow">Web Designer — Giza, Egypt</span></p>
-      <h1 class="hero-title reveal" data-delay="90">
-        <span data-i18n-html="hero.title">I design <span class="grad">websites</span><br>people remember.</span>
+  <!-- ======================= HERO ======================= -->
+  <section class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow reveal"><span class="eyebrow-dot" aria-hidden="true"></span><span data-i18n="hero.eyebrow">Creative Studio — Egypt</span></p>
+
+      <h1 class="hero-title reveal" data-delay="80">
+        <span class="hero-brand" data-i18n-html="hero.title">We design <span class="grad">everything</span><br>your brand needs.</span>
       </h1>
-      <p class="hero-sub reveal" data-delay="180" data-i18n="hero.sub">
-        This is my portfolio — every card below is generated straight from the live
-        website it showcases. Paste a link and watch it become a card.
-      </p>
-      <div class="hero-cta reveal" data-delay="270">
-        <a class="btn btn-gold" href="#work"><span data-i18n="hero.cta1">Browse my work</span><span class="btn-arrow" aria-hidden="true">→</span></a>
-        <button class="btn btn-ghost" type="button" id="hero-add"><span data-i18n="hero.cta2">Add a project</span></button>
-      </div>
-      <div class="stats reveal" data-delay="360">
-        <div class="stat">
-          <strong id="stat-projects">0</strong>
-          <span data-i18n="stat.projects">Projects</span>
-        </div>
-        <div class="stat-sep" aria-hidden="true"></div>
-        <div class="stat">
-          <strong data-i18n="stat.responsive">100%</strong>
-          <span data-i18n="stat.responsive-label">Responsive</span>
-        </div>
-        <div class="stat-sep" aria-hidden="true"></div>
-        <div class="stat">
-          <strong data-i18n="stat.care">∞</strong>
-          <span data-i18n="stat.care-label">Pixels of care</span>
-        </div>
-      </div>
-    </section>
 
-    <!-- ============ MARQUEE ============ -->
-    <div class="marquee" aria-hidden="true">
-      <div class="marquee-track" id="marquee-track"></div>
+      <p class="hero-sub reveal" data-delay="160" data-i18n="hero.sub">
+        Graphic design, websites, animation, video editing, branding and identity —
+        one studio, every service, delivered with obsessive detail.
+      </p>
+
+      <div class="hero-cta reveal" data-delay="240">
+        <a class="btn btn-grad" href="#work"><span data-i18n="hero.cta1">See our work</span><span class="btn-arrow" aria-hidden="true">→</span></a>
+        <a class="btn btn-ghost" href="https://wa.me/201141362626" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2c-5.46 0-9.9 4.44-9.9 9.9 0 1.75.46 3.45 1.32 4.95L2 22l5.3-1.38a9.9 9.9 0 0 0 4.74 1.2h.01c5.46 0 9.9-4.44 9.9-9.9 0-2.64-1.03-5.13-2.9-7A9.82 9.82 0 0 0 12.04 2zm0 18.06h-.01a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.12.82.83-3.05-.2-.31a8.22 8.22 0 0 1-1.26-4.39c0-4.54 3.7-8.23 8.25-8.23 2.2 0 4.27.86 5.83 2.41a8.19 8.19 0 0 1 2.41 5.83c0 4.54-3.7 8.25-8.24 8.25zm4.52-6.17c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.16.24-.64.8-.78.97-.15.16-.29.18-.53.06-.25-.13-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.01-.38.11-.5.11-.11.25-.29.37-.43.13-.15.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.13-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.22.25-.87.85-.87 2.07s.9 2.4 1.02 2.56c.12.17 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.47-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.15-1.18-.06-.1-.23-.16-.48-.28z"/></svg>
+          <span data-i18n="hero.cta2">WhatsApp us</span>
+        </a>
+      </div>
+
+      <div class="stats reveal" data-delay="320">
+        <div class="stat"><strong id="stat-projects">0</strong><span data-i18n="stat.projects">Projects</span></div>
+        <div class="stat-sep" aria-hidden="true"></div>
+        <div class="stat"><strong data-i18n="stat.services">12+</strong><span data-i18n="stat.services-label">Services</span></div>
+        <div class="stat-sep" aria-hidden="true"></div>
+        <div class="stat"><strong data-i18n="stat.support">24/7</strong><span data-i18n="stat.support-label">Support</span></div>
+      </div>
     </div>
 
-    <!-- ============ WORK ============ -->
-    <section class="work section" id="work">
-      <div class="section-head reveal">
-        <p class="section-kicker" data-i18n="work.kicker">Portfolio</p>
-        <h2 class="section-title" data-i18n="work.title">My Work</h2>
-        <p class="section-sub" data-i18n="work.sub">Each card is built from the live website — its title, description and image are pulled straight from the page.</p>
+    <!-- floating device showcase -->
+    <div class="hero-device reveal" data-delay="200">
+      <div class="device-switch" role="group" aria-label="View mode">
+        <button type="button" data-device="phone" class="active" data-i18n-title="device.phone" title="Phone">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18.5h2"/></svg>
+        </button>
+        <button type="button" data-device="laptop" data-i18n-title="device.laptop" title="Computer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M2 20h20"/></svg>
+        </button>
       </div>
 
-      <form class="add-bar reveal" id="add-form" data-delay="120">
+      <div class="device device-lg float" id="hero-frame" data-mode="phone">
+        <div class="device-glow" aria-hidden="true"></div>
+        <div class="device-body">
+          <span class="notch" aria-hidden="true"></span>
+          <span class="cam" aria-hidden="true"></span>
+          <div class="device-screen">
+            <div class="screen-stack" id="hero-stack"></div>
+            <span class="screen-shine" aria-hidden="true"></span>
+          </div>
+        </div>
+        <div class="device-base" aria-hidden="true"><span></span></div>
+        <div class="device-shadow" aria-hidden="true"></div>
+      </div>
+
+      <div class="device-dots" id="hero-dots" role="tablist" aria-label="Showcase"></div>
+    </div>
+
+    <a class="scroll-cue" href="#services" aria-label="Scroll"><span></span></a>
+  </section>
+
+  <!-- ======================= MARQUEE ======================= -->
+  <div class="marquee" aria-hidden="true"><div class="marquee-track" id="marquee-track"></div></div>
+
+  <!-- ======================= SERVICES · THE FLOOD ======================= -->
+  <section class="flood section" id="services">
+    <div class="flood-waves" aria-hidden="true">
+      <svg class="wave w1" viewBox="0 0 1440 220" preserveAspectRatio="none"><path d="M0 120 C 180 40 360 200 720 120 C 1080 40 1260 200 1440 120 L1440 220 L0 220 Z"/></svg>
+      <svg class="wave w2" viewBox="0 0 1440 220" preserveAspectRatio="none"><path d="M0 140 C 200 60 420 210 720 140 C 1020 70 1240 210 1440 140 L1440 220 L0 220 Z"/></svg>
+      <svg class="wave w3" viewBox="0 0 1440 220" preserveAspectRatio="none"><path d="M0 160 C 240 100 460 220 720 160 C 980 100 1200 220 1440 160 L1440 220 L0 220 Z"/></svg>
+      <div class="bubbles" id="bubbles"></div>
+    </div>
+
+    <div class="section-head reveal">
+      <p class="section-kicker" data-i18n="services.kicker">The Flood</p>
+      <h2 class="section-title" data-i18n-html="services.title">A <span class="grad">flood</span> of services</h2>
+      <p class="section-sub" data-i18n="services.sub">Everything a brand needs, pouring in from one studio — design, code, motion and edit.</p>
+    </div>
+
+    <div class="flood-grid" id="services-grid"></div>
+
+    <div class="flood-stream" aria-hidden="true">
+      <div class="stream-row"><div class="stream-track" data-dir="ltr"></div></div>
+      <div class="stream-row"><div class="stream-track" data-dir="rtl"></div></div>
+      <div class="stream-row"><div class="stream-track" data-dir="ltr"></div></div>
+    </div>
+  </section>
+
+  <!-- ======================= WORK ======================= -->
+  <section class="work section" id="work">
+    <div class="section-head reveal">
+      <p class="section-kicker" data-i18n="work.kicker">Portfolio</p>
+      <h2 class="section-title" data-i18n-html="work.title">Websites we <span class="grad">built</span></h2>
+      <p class="section-sub" data-i18n="work.sub">Every project below is shown live inside a real device — tap any screen to open the site.</p>
+    </div>
+
+    <!-- owner-only composer -->
+    <div class="owner-panel" id="owner-panel" hidden>
+      <div class="owner-panel-head">
+        <span class="owner-chip"><span class="owner-live" aria-hidden="true"></span><span data-i18n="owner.signedIn">Owner mode</span></span>
+        <button class="btn-mini" type="button" id="logout-btn" data-i18n="owner.logout">Log out</button>
+      </div>
+      <form class="add-bar" id="add-form">
         <label class="add-input">
           <span class="add-icon" aria-hidden="true">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
           </span>
-          <input type="text" id="url-input" name="url" autocomplete="off" spellcheck="false"
-                 placeholder="Paste a website link — e.g. https://yoursite.com" data-i18n-ph="form.placeholder" aria-describedby="hint">
+          <input type="text" id="url-input" name="url" autocomplete="off" spellcheck="false" placeholder="Paste a website link — e.g. https://yoursite.com" data-i18n-ph="form.placeholder">
         </label>
-        <button class="btn btn-gold add-btn" type="submit" id="add-btn">
+        <button class="btn btn-grad add-btn" type="submit" id="add-btn">
           <span class="spinner" id="add-spinner" hidden aria-hidden="true"></span>
           <span id="add-label" data-i18n="form.btn">Analyze &amp; Add</span>
         </button>
       </form>
-      <p class="hint reveal" id="hint" data-delay="180" data-i18n="form.hint">
-        How it works: I read the site’s public data (title, description, image, favicon) and build the card for you — no typing.
+      <p class="hint" data-i18n="form.hint">The site’s public data (title, description, image, favicon) is read automatically and turned into a card.</p>
+    </div>
+
+    <div class="work-grid" id="grid"></div>
+
+    <div class="empty" id="empty" hidden>
+      <div class="empty-art" aria-hidden="true">
+        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18"/><circle cx="6.5" cy="6.5" r=".6" fill="currentColor"/><circle cx="9" cy="6.5" r=".6" fill="currentColor"/></svg>
+      </div>
+      <h3 data-i18n="empty.title">Nothing published yet</h3>
+      <p data-i18n="empty.sub">The owner can sign in and add the first project link.</p>
+    </div>
+  </section>
+
+  <!-- ======================= ABOUT ======================= -->
+  <section class="about section" id="about">
+    <div class="about-card reveal">
+      <div class="about-glow" aria-hidden="true"></div>
+      <div class="about-logo" aria-hidden="true">T.W.E</div>
+      <p class="section-kicker" data-i18n="about.kicker">Who we are</p>
+      <h2 class="section-title" data-i18n="about.title">About the studio</h2>
+      <p class="about-text" data-i18n="about.text">
+        T.W.E Designer is a full-service creative studio. We design brands, build websites,
+        animate stories and edit video — all under one roof, so your identity stays consistent
+        everywhere it appears. Fast delivery, honest pricing, and work we are proud to sign.
       </p>
+      <ul class="tags" id="tags"></ul>
+    </div>
+  </section>
 
-      <div class="grid" id="grid"></div>
+  <!-- ======================= CONTACT ======================= -->
+  <section class="contact section" id="contact">
+    <div class="contact-inner">
+      <p class="section-kicker reveal" data-i18n="contact.kicker">Contact</p>
+      <h2 class="contact-title reveal" data-delay="70" data-i18n-html="contact.title">Let’s build something <span class="grad">great</span>.</h2>
+      <p class="contact-sub reveal" data-delay="140" data-i18n="contact.sub">Call us or message on WhatsApp — we answer fast.</p>
 
-      <div class="empty" id="empty" hidden>
-        <div class="empty-art" aria-hidden="true">
-          <svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18"/><circle cx="6.5" cy="6.5" r=".6" fill="currentColor"/><circle cx="9" cy="6.5" r=".6" fill="currentColor"/></svg>
-        </div>
-        <h3 data-i18n="empty.title">No projects yet</h3>
-        <p data-i18n="empty.sub">Paste your first website link above and I’ll build the card for you.</p>
-      </div>
-    </section>
+      <div class="contact-cards" id="contact-cards"></div>
 
-    <!-- ============ ABOUT ============ -->
-    <section class="about section" id="about">
-      <div class="about-card reveal">
-        <div class="about-glow" aria-hidden="true"></div>
-        <div class="avatar" aria-hidden="true">YA</div>
-        <p class="section-kicker" data-i18n="about.kicker">Who I am</p>
-        <h2 class="section-title" data-i18n="about.title">About me</h2>
-        <p class="about-text" data-i18n="about.text">
-          I’m Yassin Amr, a web designer based in Giza, Egypt. I turn ideas into fast,
-          elegant and easy-to-use websites — from landing pages to full e-commerce
-          stores. Every project in this portfolio links straight to the live site,
-          so you can click through and explore for yourself.
-        </p>
-        <ul class="tags" id="tags"></ul>
-      </div>
-    </section>
+      <p class="contact-note reveal" data-delay="320" data-i18n="contact.note">Available every day · 10:00 — 02:00 (Cairo time)</p>
+    </div>
 
-    <!-- ============ CONTACT / FOOTER ============ -->
-    <section class="contact section" id="contact">
-      <div class="contact-inner">
-        <p class="section-kicker reveal" data-i18n="contact.kicker">Contact</p>
-        <h2 class="contact-title reveal" data-delay="80" data-i18n-html="contact.title">Let’s build something <span class="grad">great</span>.</h2>
-        <p class="contact-sub reveal" data-delay="160" data-i18n="contact.sub">Have a project in mind? My phone is one tap away.</p>
+    <footer class="footer">
+      <span data-i18n="footer.left">T.W.E Designer — Creative Studio, Egypt</span>
+      <span class="footer-phones" dir="ltr">01141362626 · 01502701881</span>
+      <span data-i18n="footer.right">© 2026 · T.W.E Designer</span>
+    </footer>
+  </section>
+</main>
 
-        <div class="contact-card reveal" data-delay="240">
-          <div class="contact-id">
-            <span class="contact-role" data-i18n="contact.role">Web Designer</span>
-            <strong class="contact-name" data-i18n="contact.name">Yassin Amr</strong>
-          </div>
-          <div class="contact-actions">
-            <a class="btn btn-gold" href="tel:+201141362626" id="call-btn">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-              <span class="btn-text"><span class="btn-small" data-i18n="contact.call">Call</span><b class="phone-num" data-i18n="contact.phoneDisplay">+20 114 136 2626</b></span>
-            </a>
-            <a class="btn btn-ghost" href="https://wa.me/201141362626" target="_blank" rel="noopener">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-              <span data-i18n="contact.whatsapp">WhatsApp</span>
-            </a>
-            <button class="btn btn-ghost" type="button" id="copy-phone">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              <span id="copy-label" data-i18n="contact.copy">Copy number</span>
-            </button>
-          </div>
-        </div>
-      </div>
+<!-- ======================= FLOATING WHATSAPP ======================= -->
+<a class="wa-fab" href="https://wa.me/201141362626" target="_blank" rel="noopener" aria-label="WhatsApp">
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2c-5.46 0-9.9 4.44-9.9 9.9 0 1.75.46 3.45 1.32 4.95L2 22l5.3-1.38a9.9 9.9 0 0 0 4.74 1.2h.01c5.46 0 9.9-4.44 9.9-9.9 0-2.64-1.03-5.13-2.9-7A9.82 9.82 0 0 0 12.04 2zm0 18.06h-.01a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.12.82.83-3.05-.2-.31a8.22 8.22 0 0 1-1.26-4.39c0-4.54 3.7-8.23 8.25-8.23 2.2 0 4.27.86 5.83 2.41a8.19 8.19 0 0 1 2.41 5.83c0 4.54-3.7 8.25-8.24 8.25zm4.52-6.17c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.16.24-.64.8-.78.97-.15.16-.29.18-.53.06-.25-.13-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.01-.38.11-.5.11-.11.25-.29.37-.43.13-.15.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.13-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.22.25-.87.85-.87 2.07s.9 2.4 1.02 2.56c.12.17 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.47-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.15-1.18-.06-.1-.23-.16-.48-.28z"/></svg>
+  <span class="wa-pulse" aria-hidden="true"></span>
+</a>
 
-      <footer class="footer">
-        <span data-i18n="footer.left">Yassin Amr — Web Designer, Giza, Egypt</span>
-        <span class="footer-phone" dir="ltr">0114 136 2626</span>
-        <span data-i18n="footer.right">© 2026 · Designed &amp; built by Yassin Amr</span>
-      </footer>
-    </section>
-  </main>
+<!-- ======================= OWNER LOGIN MODAL ======================= -->
+<div class="modal" id="login-modal" hidden>
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="login-title">
+    <button class="modal-x" type="button" data-close aria-label="Close">✕</button>
+    <div class="modal-key" aria-hidden="true">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
+    <h3 class="modal-title" id="login-title" data-i18n="owner.title">Owner sign in</h3>
+    <p class="modal-sub" data-i18n="owner.sub">This area is for the site owner only.</p>
 
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <form id="login-form" novalidate>
+      <label class="field">
+        <span class="field-label" data-i18n="owner.user">Username</span>
+        <input type="text" id="login-user" name="username" autocomplete="username" spellcheck="false" required>
+      </label>
+      <label class="field">
+        <span class="field-label" data-i18n="owner.pass">Password</span>
+        <span class="field-wrap">
+          <input type="password" id="login-pass" name="password" autocomplete="current-password" required>
+          <button class="eye" type="button" id="toggle-pass" aria-label="Show password">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </span>
+      </label>
+      <p class="form-error" id="login-error" hidden></p>
+      <button class="btn btn-grad modal-submit" type="submit" id="login-submit">
+        <span class="spinner" id="login-spinner" hidden aria-hidden="true"></span>
+        <span id="login-label" data-i18n="owner.submit">Sign in</span>
+      </button>
+    </form>
+    <p class="modal-foot" data-i18n="owner.foot">Protected session · 12 hours</p>
+  </div>
+</div>
 
-  <script src="js/parse.js"></script>
-  <script src="js/app.js"></script>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="js/parse.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>
