@@ -7,16 +7,20 @@
 
 /* ------------------------------- contacts ---------------------------------- */
 
-const CONTACTS = [
+const DEFAULT_CONTACTS = [
   { local: '01141362626', e164: '201141362626', display: '0114 136 2626', labelKey: 'contact.line1' },
   { local: '01502701881', e164: '201502701881', display: '0150 270 1881', labelKey: 'contact.line2' },
 ];
+
+const DEFAULT_SHOWCASE = ['/img/screen-1.jpg', '/img/screen-2.jpg', '/img/screen-3.jpg', '/img/screen-4.jpg'];
 
 /* --------------------------------- i18n ------------------------------------ */
 
 const I18N = {
   en: {
     'doc.title': 'T.W.E Designer — Official Studio',
+    'meta.description': 'T.W.E Designer — graphic design, websites, animation, video editing, branding and everything in between. Official studio site.',
+    'brand.name': 'T.W.E<em> Designer</em>',
     'intro.tag': 'Design · Web · Motion · Everything',
     'intro.skip': 'Skip',
 
@@ -41,6 +45,26 @@ const I18N = {
     'owner.bad': 'Wrong username or password.',
     'owner.throttled': 'Too many attempts. Try again in {s}s.',
     'owner.netfail': 'Could not reach the server.',
+    'owner.editOn': 'Edit page text',
+    'owner.editOff': 'Stop editing',
+    'owner.editHint': 'Editing is on — click any text on the page and type to change it. Press Enter or click away to save, Esc to cancel, double-click a field to reset it.',
+    'owner.moreSettings': 'More site settings (numbers, images, hidden labels…)',
+    'owner.saved': 'Saved.',
+    'owner.savefail': 'Could not save — try again.',
+    'owner.reset': 'Reset to default.',
+    'owner.resetfail': 'Could not reset.',
+    'owner.emptyRevert': 'That field can’t be empty — reverted.',
+    'owner.badImage': 'Please use a full https:// image link.',
+    'owner.badPhone': 'Please enter a valid phone number.',
+    'settings.contact1': 'Main phone number',
+    'settings.contact2': 'Second phone number',
+    'settings.docTitle': 'Browser tab title',
+    'settings.metaDescription': 'Search engine description',
+    'settings.placeholder': '“Add project” input placeholder',
+    'settings.devicePhone': 'Phone-view tooltip',
+    'settings.deviceLaptop': 'Computer-view tooltip',
+    'settings.cardRemove': '“Remove project” tooltip',
+    'settings.showcase': 'Hero showcase image',
 
     'hero.eyebrow': 'Creative Studio — Egypt',
     'hero.title': 'We design <span class="grad">everything</span><br>your brand needs.',
@@ -121,6 +145,8 @@ const I18N = {
 
   ar: {
     'doc.title': 'T.W.E Designer — الموقع الرسمي',
+    'meta.description': 'T.W.E Designer — جرافيك ديزاين، مواقع إلكترونية، أنيميشن، مونتاج فيديو، هوية بصرية وكل ما بينهما. الموقع الرسمي للاستوديو.',
+    'brand.name': 'T.W.E<em> Designer</em>',
     'intro.tag': 'تصميم · مواقع · أنيميشن · كل شيء',
     'intro.skip': 'تخطي',
 
@@ -145,6 +171,26 @@ const I18N = {
     'owner.bad': 'اسم المستخدم أو كلمة المرور غير صحيحة.',
     'owner.throttled': 'محاولات كثيرة. حاول بعد {s} ثانية.',
     'owner.netfail': 'تعذر الوصول إلى الخادم.',
+    'owner.editOn': 'تعديل نصوص الصفحة',
+    'owner.editOff': 'إيقاف التعديل',
+    'owner.editHint': 'وضع التعديل مفعّل — اضغط على أي نص في الصفحة واكتب لتغييره. اضغط Enter أو انقر خارج النص للحفظ، Esc للإلغاء، ودبل-كليك لإعادته للوضع الافتراضي.',
+    'owner.moreSettings': 'إعدادات إضافية (أرقام، صور، تسميات مخفية…)',
+    'owner.saved': 'تم الحفظ.',
+    'owner.savefail': 'تعذر الحفظ — حاول مرة أخرى.',
+    'owner.reset': 'تمت الإعادة للوضع الافتراضي.',
+    'owner.resetfail': 'تعذرت الإعادة للوضع الافتراضي.',
+    'owner.emptyRevert': 'لا يمكن ترك هذا الحقل فارغاً — تمت إعادته.',
+    'owner.badImage': 'من فضلك استخدم رابط صورة كامل يبدأ بـ https://.',
+    'owner.badPhone': 'من فضلك أدخل رقم هاتف صحيح.',
+    'settings.contact1': 'رقم الهاتف الأول',
+    'settings.contact2': 'رقم الهاتف الثاني',
+    'settings.docTitle': 'عنوان تبويب المتصفح',
+    'settings.metaDescription': 'وصف محركات البحث',
+    'settings.placeholder': 'النص الإرشادي لحقل "إضافة مشروع"',
+    'settings.devicePhone': 'تلميح عرض الهاتف',
+    'settings.deviceLaptop': 'تلميح عرض الكمبيوتر',
+    'settings.cardRemove': 'تلميح "حذف المشروع"',
+    'settings.showcase': 'صورة عرض الواجهة الرئيسية',
 
     'hero.eyebrow': 'استوديو إبداعي — مصر',
     'hero.title': 'نصمم <span class="grad">كل شيء</span><br>تحتاجه علامتك.',
@@ -235,7 +281,101 @@ let deviceMode = localStorage.getItem(DEVICE_KEY) || detectDevice();
 let projects = [];
 let isOwner = false;
 
-const t = (key) => (I18N[lang] && I18N[lang][key]) ?? I18N.en[key] ?? key;
+/* ---------------------------- editable content ------------------------------
+ * CONTENT holds every override the owner has saved on the server, layered on
+ * top of the built-in I18N defaults above. Nothing is hard-coded once the
+ * owner has touched it — every word, number and image link can be replaced.
+ * ---------------------------------------------------------------------------- */
+let CONTENT = { en: {}, ar: {}, site: {} };
+
+function ov(scope, path) {
+  const bucket = CONTENT[scope];
+  return bucket && Object.prototype.hasOwnProperty.call(bucket, path) ? bucket[path] : undefined;
+}
+
+function baseText(l, key) {
+  return I18N[l] && I18N[l][key];
+}
+
+const t = (key) => {
+  const o = ov(lang, key);
+  if (o !== undefined) return o;
+  return baseText(lang, key) ?? baseText('en', key) ?? key;
+};
+
+/** Effective value of an array-type i18n entry (strings or {t,d} objects)
+ *  with any per-item / per-field overrides applied on top. */
+function effectiveList(key) {
+  const base = baseText(lang, key) || baseText('en', key) || [];
+  return base.map((item, i) => {
+    if (item && typeof item === 'object') {
+      const out = { ...item };
+      Object.keys(item).forEach((field) => {
+        const o = ov(lang, `${key}.${i}.${field}`);
+        if (o !== undefined) out[field] = o;
+      });
+      return out;
+    }
+    const o = ov(lang, `${key}.${i}`);
+    return o !== undefined ? o : item;
+  });
+}
+
+function effectiveContacts() {
+  return DEFAULT_CONTACTS.map((c, i) => {
+    const raw = ov('site', `contacts.${i}.display`);
+    const display = raw !== undefined ? raw : c.display;
+    const digits = String(display).replace(/\D/g, '');
+    let e164 = digits;
+    if (digits.startsWith('0')) e164 = '20' + digits.slice(1);
+    else if (!digits.startsWith('20')) e164 = '20' + digits;
+    return { ...c, display, local: digits, e164 };
+  });
+}
+
+function effectiveShowcase() {
+  return DEFAULT_SHOWCASE.map((src, i) => {
+    const o = ov('site', `showcase.${i}`);
+    return o || src;
+  });
+}
+
+async function fetchContent() {
+  try {
+    const res = await fetch('/api/content', { cache: 'no-store' });
+    const data = await res.json();
+    if (data && data.ok && data.content) {
+      CONTENT = {
+        en: data.content.en || {},
+        ar: data.content.ar || {},
+        site: data.content.site || {},
+      };
+    }
+  } catch { /* fall back to defaults */ }
+}
+
+async function saveContent(scope, path, value) {
+  const res = await fetch('/api/content', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ scope, path, value }),
+  });
+  if (!res.ok) throw new Error('save-failed');
+  const data = await res.json().catch(() => ({}));
+  if (!data.ok) throw new Error('save-failed');
+  if (!CONTENT[scope]) CONTENT[scope] = {};
+  CONTENT[scope][path] = value;
+  return data;
+}
+
+async function resetContent(scope, path) {
+  const res = await fetch(`/api/content?scope=${encodeURIComponent(scope)}&path=${encodeURIComponent(path)}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('reset-failed');
+  if (CONTENT[scope]) delete CONTENT[scope][path];
+}
+
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
 
@@ -392,15 +532,8 @@ function applyLang(next, { animate = false } = {}) {
   const root = document.documentElement;
   root.lang = lang;
   root.dir = lang === 'ar' ? 'rtl' : 'ltr';
-  document.title = t('doc.title');
 
-  $$('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
-  $$('[data-i18n-html]').forEach((el) => { el.innerHTML = t(el.dataset.i18nHtml); });
-  $$('[data-i18n-ph]').forEach((el) => { el.placeholder = t(el.dataset.i18nPh); });
-  $$('[data-i18n-title]').forEach((el) => {
-    el.title = t(el.dataset.i18nTitle);
-    if (!el.getAttribute('aria-label')) el.setAttribute('aria-label', t(el.dataset.i18nTitle));
-  });
+  applyAttributeBindings();
 
   const introTag = $('#intro-tag');
   if (introTag) introTag.textContent = t('intro.tag');
@@ -418,8 +551,30 @@ function applyLang(next, { animate = false } = {}) {
   buildStream();
   buildTags();
   buildContacts();
+  buildShowcase();
+  syncContactLinks();
   setOwner(isOwner, { quiet: true });
   renderGrid();
+  buildOwnerSettings();
+  setEditMode(editingOn);
+}
+
+/** Text/attribute bindings that don't live inside a rebuildable list:
+ *  document title, meta description, plain data-i18n(-html/-ph/-title) nodes.
+ *  Re-run any time content changes so an owner edit shows up everywhere
+ *  it is quoted, immediately, without a page reload. */
+function applyAttributeBindings() {
+  document.title = t('doc.title');
+  const metaDesc = document.querySelector('meta[name="description"]');
+  if (metaDesc) metaDesc.setAttribute('content', t('meta.description'));
+
+  $$('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
+  $$('[data-i18n-html]').forEach((el) => { el.innerHTML = t(el.dataset.i18nHtml); });
+  $$('[data-i18n-ph]').forEach((el) => { el.placeholder = t(el.dataset.i18nPh); });
+  $$('[data-i18n-title]').forEach((el) => {
+    el.title = t(el.dataset.i18nTitle);
+    if (!el.getAttribute('aria-label')) el.setAttribute('aria-label', t(el.dataset.i18nTitle));
+  });
 }
 
 /* ======================================================================
@@ -429,25 +584,36 @@ function applyLang(next, { animate = false } = {}) {
 function buildMarquee() {
   const track = $('#marquee-track');
   if (!track) return;
-  const one = t('marquee').map((s) => `<span class="marquee-item"><i>✦</i>${esc(s)}</span>`).join('');
+  const items = effectiveList('marquee');
+  const one = items
+    .map((s, i) => `<span class="marquee-item"><i>✦</i><span data-edit-scope="${lang}" data-edit-path="marquee.${i}" data-edit-default="${esc(baseText(lang, 'marquee')[i] ?? '')}">${esc(s)}</span></span>`)
+    .join('');
   track.innerHTML = one + one;
+  refreshEditables();
 }
 
 function buildStream() {
-  const items = t('services.stream');
+  const items = effectiveList('services.stream');
+  const defaults = baseText(lang, 'services.stream') || [];
   $$('.stream-track').forEach((track, row) => {
-    const shifted = items.slice(row * 6).concat(items.slice(0, row * 6));
-    const one = shifted
-      .map((s, i) => `<span class="stream-chip${(i + row) % 5 === 0 ? ' hot' : ''}">${esc(s)}</span>`)
+    const order = items.map((_, i) => (i + row * 6) % items.length);
+    const one = order
+      .map((realIdx, j) => `<span class="stream-chip${(j + row) % 5 === 0 ? ' hot' : ''}" data-edit-scope="${lang}" data-edit-path="services.stream.${realIdx}" data-edit-default="${esc(defaults[realIdx] ?? '')}">${esc(items[realIdx])}</span>`)
       .join('');
     track.innerHTML = one + one;
   });
+  refreshEditables();
 }
 
 function buildTags() {
   const el = $('#tags');
   if (!el) return;
-  el.innerHTML = t('about.tags').map((s) => `<li>${esc(s)}</li>`).join('');
+  const items = effectiveList('about.tags');
+  const defaults = baseText(lang, 'about.tags') || [];
+  el.innerHTML = items
+    .map((s, i) => `<li data-edit-scope="${lang}" data-edit-path="about.tags.${i}" data-edit-default="${esc(defaults[i] ?? '')}">${esc(s)}</li>`)
+    .join('');
+  refreshEditables();
 }
 
 /* ======================================================================
@@ -472,7 +638,8 @@ const SVC_ICONS = [
 function buildServices() {
   const grid = $('#services-grid');
   if (!grid) return;
-  const items = t('services.items');
+  const items = effectiveList('services.items');
+  const defaults = baseText(lang, 'services.items') || [];
   grid.innerHTML = items
     .map((s, i) => `
       <article class="svc" style="--rd:${(i % 4) * 90 + Math.floor(i / 4) * 120}ms; --rot:${i % 2 ? 2 : -2}deg">
@@ -480,11 +647,12 @@ function buildServices() {
         <span class="svc-icon" aria-hidden="true">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${SVC_ICONS[i % SVC_ICONS.length]}</svg>
         </span>
-        <h3>${esc(s.t)}</h3>
-        <p>${esc(s.d)}</p>
+        <h3 data-edit-scope="${lang}" data-edit-path="services.items.${i}.t" data-edit-default="${esc(defaults[i] ? defaults[i].t : '')}">${esc(s.t)}</h3>
+        <p data-edit-scope="${lang}" data-edit-path="services.items.${i}.d" data-edit-default="${esc(defaults[i] ? defaults[i].d : '')}">${esc(s.d)}</p>
       </article>`)
     .join('');
   observeReveals();
+  refreshEditables();
 }
 
 function buildBubbles() {
@@ -515,7 +683,6 @@ function applyDeviceMode(mode, { remember = true } = {}) {
 
 /* hero showcase ------------------------------------------------------------ */
 
-const SHOWCASE = ['/img/screen-1.jpg', '/img/screen-2.jpg', '/img/screen-3.jpg', '/img/screen-4.jpg'];
 let showIndex = 0;
 let showTimer = null;
 
@@ -523,10 +690,11 @@ function buildShowcase() {
   const stack = $('#hero-stack');
   const dots = $('#hero-dots');
   if (!stack) return;
-  stack.innerHTML = SHOWCASE
-    .map((src, i) => `<div class="shot${i === 0 ? ' active' : ''}"><img src="${src}" alt="" loading="${i === 0 ? 'eager' : 'lazy'}"></div>`)
+  const shots = effectiveShowcase();
+  stack.innerHTML = shots
+    .map((src, i) => `<div class="shot${i === 0 ? ' active' : ''}"><img src="${esc(src)}" alt="" loading="${i === 0 ? 'eager' : 'lazy'}"></div>`)
     .join('');
-  dots.innerHTML = SHOWCASE
+  dots.innerHTML = shots
     .map((_, i) => `<button type="button" role="tab" class="${i === 0 ? 'active' : ''}" aria-label="Screen ${i + 1}"></button>`)
     .join('');
 
@@ -578,7 +746,7 @@ function cardTemplate(p, index) {
         <span class="notch" aria-hidden="true"></span>
         <span class="cam" aria-hidden="true"></span>
         <a class="device-screen" href="${esc(p.url)}" target="_blank" rel="noopener" aria-label="${esc(projTitle(p))}">
-          ${p.demo ? `<span class="card-badge">${esc(t('work.demo'))}</span>` : ''}
+          ${p.demo ? `<span class="card-badge" data-i18n="work.demo">${esc(t('work.demo'))}</span>` : ''}
           <div class="screen-stack">${media}</div>
           <span class="screen-shine" aria-hidden="true"></span>
         </a>
@@ -591,7 +759,7 @@ function cardTemplate(p, index) {
       ${projDesc(p) ? `<p class="work-desc">${esc(projDesc(p))}</p>` : ''}
       <div class="work-meta">
         <span class="work-host" dir="ltr">${fav}${esc(p.host || '')}</span>
-        <a class="btn-visit" href="${esc(p.url)}" target="_blank" rel="noopener">${esc(t('card.visit'))} <span aria-hidden="true">↗</span></a>
+        <a class="btn-visit" href="${esc(p.url)}" target="_blank" rel="noopener"><span data-i18n="card.visit">${esc(t('card.visit'))}</span> <span aria-hidden="true">↗</span></a>
       </div>
     </div>
   </article>`;
@@ -765,6 +933,240 @@ async function removeProject(id) {
 }
 
 /* ======================================================================
+   OWNER — INLINE CONTENT EDITING
+   Every visible word on the page (headings, list items, contact numbers,
+   button labels…) is wrapped by data-i18n / data-i18n-html / data-edit-path.
+   When the owner turns editing on, those elements become contenteditable;
+   saving PUTs the new value to /api/content so it is live for every visitor.
+   ====================================================================== */
+
+let editingOn = false;
+
+function ownerEditablesSelector() {
+  return '[data-i18n]:not([data-no-edit]), [data-i18n-html]:not([data-no-edit]), [data-edit-path]:not([data-no-edit])';
+}
+
+function editableInfo(el) {
+  if (el.dataset.editPath) {
+    return { scope: el.dataset.editScope || 'site', path: el.dataset.editPath, html: false, isSite: true };
+  }
+  if (el.dataset.i18nHtml) return { scope: lang, path: el.dataset.i18nHtml, html: true, isSite: false };
+  if (el.dataset.i18n) return { scope: lang, path: el.dataset.i18n, html: false, isSite: false };
+  return null;
+}
+
+function defaultValueFor(el, info) {
+  if (el.dataset.editDefault !== undefined) return el.dataset.editDefault;
+  return baseText(info.scope, info.path) ?? baseText('en', info.path) ?? '';
+}
+
+function validateEdit(info, value) {
+  if (info.path.startsWith('contacts.') && info.path.endsWith('.display')) {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length < 7) return t('owner.badPhone');
+  }
+  if (info.path.startsWith('showcase.')) {
+    if (!/^https?:\/\//i.test(value) && !value.startsWith('/')) return t('owner.badImage');
+  }
+  return null;
+}
+
+function wireEditableOnce(el) {
+  if (el.__editWired) return;
+  el.__editWired = true;
+  el.classList.add('owner-editable');
+
+  let before = '';
+  el.addEventListener('focus', () => {
+    if (!editingOn) return;
+    const info = editableInfo(el);
+    before = info && info.html ? el.innerHTML : el.textContent;
+  });
+
+  el.addEventListener('keydown', (e) => {
+    if (!editingOn) return;
+    if (e.key === 'Escape') {
+      const info = editableInfo(el);
+      if (info) { if (info.html) el.innerHTML = before; else el.textContent = before; }
+      el.blur();
+    } else if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      el.blur();
+    }
+  });
+
+  el.addEventListener('blur', () => {
+    if (!editingOn) return;
+    commitEdit(el, before);
+  });
+
+  el.addEventListener('click', (e) => {
+    if (editingOn) e.preventDefault();
+  });
+
+  el.addEventListener('dblclick', (e) => {
+    if (!editingOn) return;
+    e.preventDefault();
+    resetField(el);
+  });
+}
+
+async function commitEdit(el, before) {
+  const info = editableInfo(el);
+  if (!info) return;
+  const now = (info.html ? el.innerHTML : el.textContent).trim();
+  const prev = before.trim();
+  if (now === prev) return;
+
+  if (!now) {
+    if (info.html) el.innerHTML = before; else el.textContent = before;
+    toast(t('owner.emptyRevert'), 'error');
+    return;
+  }
+
+  const badReason = validateEdit(info, now);
+  if (badReason) {
+    if (info.html) el.innerHTML = before; else el.textContent = before;
+    toast(badReason, 'error');
+    return;
+  }
+
+  el.classList.add('saving');
+  try {
+    await saveContent(info.scope, info.path, now);
+    el.classList.remove('saving');
+    el.classList.add('saved-flash');
+    setTimeout(() => el.classList.remove('saved-flash'), 900);
+    syncAfterContentChange(info.path);
+  } catch {
+    el.classList.remove('saving');
+    if (info.html) el.innerHTML = before; else el.textContent = before;
+    toast(t('owner.savefail'), 'error');
+  }
+}
+
+async function resetField(el) {
+  const info = editableInfo(el);
+  if (!info) return;
+  const def = defaultValueFor(el, info);
+  try {
+    await resetContent(info.scope, info.path);
+    if (info.html) el.innerHTML = def; else el.textContent = def;
+    toast(t('owner.reset'), 'success');
+    syncAfterContentChange(info.path);
+  } catch {
+    toast(t('owner.resetfail'), 'error');
+  }
+}
+
+/** After any save/reset, ripple the change out to every other place that
+ *  quotes the same piece of content (links, meta tags, card tooltips…). */
+function syncAfterContentChange(path) {
+  if (path.startsWith('contacts.')) syncContactLinks();
+  if (path.startsWith('showcase.')) buildShowcase();
+  applyAttributeBindings();
+  if (path === 'card.remove' || path === 'work.demo' || path === 'card.visit') renderGrid();
+}
+
+function refreshEditables() {
+  $$(ownerEditablesSelector()).forEach((el) => {
+    wireEditableOnce(el);
+    el.setAttribute('contenteditable', editingOn ? 'true' : 'false');
+  });
+}
+
+function setEditMode(on) {
+  editingOn = Boolean(on) && isOwner;
+  document.body.classList.toggle('owner-editing', editingOn);
+  const btn = $('#edit-toggle-btn');
+  if (btn) {
+    btn.textContent = t(editingOn ? 'owner.editOff' : 'owner.editOn');
+    btn.classList.toggle('active', editingOn);
+  }
+  const hint = $('#edit-hint');
+  if (hint) hint.hidden = !editingOn;
+  refreshEditables();
+}
+
+/* ------------------------------ settings panel ------------------------------
+ * Fields that aren't visible page text (tooltips, placeholders, meta tags,
+ * phone numbers, showcase images) get a small labelled form here so the
+ * owner can still change them in one place. */
+
+const SETTINGS_FIELDS = () => ([
+  { scope: lang, path: 'doc.title', label: t('settings.docTitle'), kind: 'text' },
+  { scope: lang, path: 'meta.description', label: t('settings.metaDescription'), kind: 'textarea' },
+  { scope: lang, path: 'form.placeholder', label: t('settings.placeholder'), kind: 'text' },
+  { scope: lang, path: 'device.phone', label: t('settings.devicePhone'), kind: 'text' },
+  { scope: lang, path: 'device.laptop', label: t('settings.deviceLaptop'), kind: 'text' },
+  { scope: lang, path: 'card.remove', label: t('settings.cardRemove'), kind: 'text' },
+  { scope: 'site', path: 'contacts.0.display', label: t('settings.contact1'), kind: 'text', dir: 'ltr' },
+  { scope: 'site', path: 'contacts.1.display', label: t('settings.contact2'), kind: 'text', dir: 'ltr' },
+  { scope: 'site', path: 'showcase.0', label: `${t('settings.showcase')} 1`, kind: 'text', dir: 'ltr' },
+  { scope: 'site', path: 'showcase.1', label: `${t('settings.showcase')} 2`, kind: 'text', dir: 'ltr' },
+  { scope: 'site', path: 'showcase.2', label: `${t('settings.showcase')} 3`, kind: 'text', dir: 'ltr' },
+  { scope: 'site', path: 'showcase.3', label: `${t('settings.showcase')} 4`, kind: 'text', dir: 'ltr' },
+]);
+
+function settingsFieldValue(f) {
+  const o = ov(f.scope, f.path);
+  if (o !== undefined) return o;
+  if (f.scope === 'site') {
+    const cm = f.path.match(/^contacts\.(\d+)\.display$/);
+    if (cm) return DEFAULT_CONTACTS[Number(cm[1])]?.display || '';
+    const sm = f.path.match(/^showcase\.(\d+)$/);
+    if (sm) return DEFAULT_SHOWCASE[Number(sm[1])] || '';
+    return '';
+  }
+  return baseText(f.scope, f.path) ?? baseText('en', f.path) ?? '';
+}
+
+function buildOwnerSettings() {
+  const body = $('#owner-settings-body');
+  if (!body || !isOwner) return;
+  const fields = SETTINGS_FIELDS();
+  body.innerHTML = fields.map((f, i) => `
+    <div class="settings-row">
+      <label for="setting-${i}">${esc(f.label)}</label>
+      ${f.kind === 'textarea'
+        ? `<textarea id="setting-${i}" rows="2" dir="${f.dir || 'auto'}" data-scope="${f.scope}" data-path="${f.path}">${esc(settingsFieldValue(f))}</textarea>`
+        : `<input id="setting-${i}" type="text" dir="${f.dir || 'auto'}" data-scope="${f.scope}" data-path="${f.path}" value="${esc(settingsFieldValue(f))}">`}
+      <button type="button" class="settings-reset" data-scope="${f.scope}" data-path="${f.path}" title="${esc(t('owner.reset'))}" aria-label="${esc(t('owner.reset'))}">↺</button>
+    </div>`).join('');
+
+  body.querySelectorAll('input[data-path], textarea[data-path]').forEach((input) => {
+    input.addEventListener('change', async () => {
+      const { scope, path } = input.dataset;
+      const value = input.value.trim();
+      if (!value) { toast(t('owner.emptyRevert'), 'error'); input.value = settingsFieldValue({ scope, path }); return; }
+      const badReason = validateEdit({ path }, value);
+      if (badReason) { toast(badReason, 'error'); input.value = settingsFieldValue({ scope, path }); return; }
+      try {
+        await saveContent(scope, path, value);
+        toast(t('owner.saved'), 'success');
+        syncAfterContentChange(path);
+      } catch {
+        toast(t('owner.savefail'), 'error');
+      }
+    });
+  });
+
+  body.querySelectorAll('.settings-reset').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const { scope, path } = btn.dataset;
+      try {
+        await resetContent(scope, path);
+        toast(t('owner.reset'), 'success');
+        syncAfterContentChange(path);
+        buildOwnerSettings();
+      } catch {
+        toast(t('owner.resetfail'), 'error');
+      }
+    });
+  });
+}
+
+/* ======================================================================
    OWNER SESSION
    ====================================================================== */
 
@@ -775,6 +1177,8 @@ function setOwner(value, { quiet = false } = {}) {
   $('#owner-dot').hidden = !value;
   $('#owner-btn').classList.toggle('is-owner', value);
   $('#owner-btn-label').textContent = value ? t('owner.signedIn').split('—')[0].trim() : t('owner.btn');
+  if (value) buildOwnerSettings();
+  if (!value) setEditMode(false);
   if (changed && !quiet) renderGrid();
 }
 
@@ -863,10 +1267,11 @@ async function doLogout() {
 function buildContacts() {
   const wrap = $('#contact-cards');
   if (!wrap) return;
-  wrap.innerHTML = CONTACTS.map((c, i) => `
+  const contacts = effectiveContacts();
+  wrap.innerHTML = contacts.map((c, i) => `
     <div class="contact-card reveal" style="--rd:${180 + i * 90}ms">
-      <span class="cc-label">${esc(t(c.labelKey))}</span>
-      <a class="cc-num" href="tel:+${c.e164}" dir="ltr">${esc(c.display)}</a>
+      <span class="cc-label" data-i18n="${c.labelKey}">${esc(t(c.labelKey))}</span>
+      <a class="cc-num" href="tel:+${c.e164}" dir="ltr" data-edit-scope="site" data-edit-path="contacts.${i}.display" data-edit-default="${esc(DEFAULT_CONTACTS[i].display)}">${esc(c.display)}</a>
       <div class="cc-actions">
         <a class="btn btn-grad" href="tel:+${c.e164}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
@@ -883,6 +1288,22 @@ function buildContacts() {
       </div>
     </div>`).join('');
   observeReveals();
+  refreshEditables();
+}
+
+/** Every place a phone number is quoted outside the contact cards (hero
+ *  WhatsApp button, floating WhatsApp fab, footer line) is kept in sync
+ *  with the owner-editable contacts list. */
+function syncContactLinks() {
+  const contacts = effectiveContacts();
+  const main = contacts[0];
+  if (!main) return;
+  const heroWa = $('#hero-wa-link');
+  if (heroWa) heroWa.href = `https://wa.me/${main.e164}`;
+  const fab = $('#wa-fab-link');
+  if (fab) fab.href = `https://wa.me/${main.e164}`;
+  const footer = $('#footer-phones');
+  if (footer) footer.textContent = contacts.map((c) => c.display).join(' · ');
 }
 
 async function copyNumber(btn) {
@@ -972,6 +1393,10 @@ function bindEvents() {
   });
   $('#login-form').addEventListener('submit', doLogin);
   $('#logout-btn').addEventListener('click', doLogout);
+  $('#edit-toggle-btn').addEventListener('click', () => setEditMode(!editingOn));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && editingOn && document.activeElement === document.body) setEditMode(false);
+  });
   $$('#login-modal [data-close]').forEach((el) => el.addEventListener('click', closeModal));
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !$('#login-modal').hidden) closeModal();
@@ -1026,8 +1451,9 @@ document.addEventListener('DOMContentLoaded', () => {
   bindEvents();
   buildShowcase();
   buildBubbles();
-  applyLang(lang);
+  applyLang(lang); // paint immediately with built-in defaults, no flash
   applyDeviceMode(deviceMode, { remember: false });
   observeReveals();
+  fetchContent().then(() => applyLang(lang)); // then layer any owner overrides on top
   checkSession().then(loadProjects);
 });

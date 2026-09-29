@@ -74,7 +74,7 @@
         <path d="M10 26l6 14 8-20 8 20 6-14" stroke="url(#bm)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".55"/>
       </svg>
     </span>
-    <span class="brand-name">T.W.E<em> Designer</em></span>
+    <span class="brand-name" data-i18n-html="brand.name">T.W.E<em> Designer</em></span>
   </a>
 
   <nav class="nav-links" aria-label="Primary">
@@ -94,7 +94,7 @@
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
       </svg>
-      <span class="owner-btn-label" id="owner-btn-label" data-i18n="owner.btn">Owner</span>
+      <span class="owner-btn-label" id="owner-btn-label" data-i18n="owner.btn" data-no-edit>Owner</span>
       <span class="owner-dot" id="owner-dot" hidden aria-hidden="true"></span>
     </button>
     <button class="burger" id="burger" type="button" aria-label="Menu" aria-expanded="false"><i></i><i></i><i></i></button>
@@ -119,7 +119,7 @@
 
       <div class="hero-cta reveal" data-delay="240">
         <a class="btn btn-grad" href="#work"><span data-i18n="hero.cta1">See our work</span><span class="btn-arrow" aria-hidden="true">→</span></a>
-        <a class="btn btn-ghost" href="https://wa.me/201141362626" target="_blank" rel="noopener">
+        <a class="btn btn-ghost" id="hero-wa-link" href="https://wa.me/201141362626" target="_blank" rel="noopener">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2c-5.46 0-9.9 4.44-9.9 9.9 0 1.75.46 3.45 1.32 4.95L2 22l5.3-1.38a9.9 9.9 0 0 0 4.74 1.2h.01c5.46 0 9.9-4.44 9.9-9.9 0-2.64-1.03-5.13-2.9-7A9.82 9.82 0 0 0 12.04 2zm0 18.06h-.01a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.12.82.83-3.05-.2-.31a8.22 8.22 0 0 1-1.26-4.39c0-4.54 3.7-8.23 8.25-8.23 2.2 0 4.27.86 5.83 2.41a8.19 8.19 0 0 1 2.41 5.83c0 4.54-3.7 8.25-8.24 8.25zm4.52-6.17c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.16.24-.64.8-.78.97-.15.16-.29.18-.53.06-.25-.13-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.01-.38.11-.5.11-.11.25-.29.37-.43.13-.15.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.13-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.22.25-.87.85-.87 2.07s.9 2.4 1.02 2.56c.12.17 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.47-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.15-1.18-.06-.1-.23-.16-.48-.28z"/></svg>
           <span data-i18n="hero.cta2">WhatsApp us</span>
         </a>
@@ -204,8 +204,12 @@
     <div class="owner-panel" id="owner-panel" hidden>
       <div class="owner-panel-head">
         <span class="owner-chip"><span class="owner-live" aria-hidden="true"></span><span data-i18n="owner.signedIn">Owner mode</span></span>
-        <button class="btn-mini" type="button" id="logout-btn" data-i18n="owner.logout">Log out</button>
+        <div class="owner-panel-actions">
+          <button class="btn-mini btn-edit-toggle" type="button" id="edit-toggle-btn" data-i18n="owner.editOn" data-no-edit>Edit page text</button>
+          <button class="btn-mini" type="button" id="logout-btn" data-i18n="owner.logout" data-no-edit>Log out</button>
+        </div>
       </div>
+      <p class="hint edit-hint" id="edit-hint" hidden data-i18n="owner.editHint">Editing is on — click any text on the page and type to change it. Press Enter or click away to save, Esc to cancel, double-click a field to reset it.</p>
       <form class="add-bar" id="add-form">
         <label class="add-input">
           <span class="add-icon" aria-hidden="true">
@@ -219,6 +223,11 @@
         </button>
       </form>
       <p class="hint" data-i18n="form.hint">The site’s public data (title, description, image, favicon) is read automatically and turned into a card.</p>
+
+      <details class="owner-settings" id="owner-settings">
+        <summary data-i18n="owner.moreSettings">More site settings (numbers, images, hidden labels…)</summary>
+        <div class="owner-settings-body" id="owner-settings-body"></div>
+      </details>
     </div>
 
     <div class="work-grid" id="grid"></div>
@@ -262,14 +271,14 @@
 
     <footer class="footer">
       <span data-i18n="footer.left">T.W.E Designer — Creative Studio, Egypt</span>
-      <span class="footer-phones" dir="ltr">01141362626 · 01502701881</span>
+      <span class="footer-phones" id="footer-phones" dir="ltr">01141362626 · 01502701881</span>
       <span data-i18n="footer.right">© 2026 · T.W.E Designer</span>
     </footer>
   </section>
 </main>
 
 <!-- ======================= FLOATING WHATSAPP ======================= -->
-<a class="wa-fab" href="https://wa.me/201141362626" target="_blank" rel="noopener" aria-label="WhatsApp">
+<a class="wa-fab" id="wa-fab-link" href="https://wa.me/201141362626" target="_blank" rel="noopener" aria-label="WhatsApp">
   <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2c-5.46 0-9.9 4.44-9.9 9.9 0 1.75.46 3.45 1.32 4.95L2 22l5.3-1.38a9.9 9.9 0 0 0 4.74 1.2h.01c5.46 0 9.9-4.44 9.9-9.9 0-2.64-1.03-5.13-2.9-7A9.82 9.82 0 0 0 12.04 2zm0 18.06h-.01a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.12.82.83-3.05-.2-.31a8.22 8.22 0 0 1-1.26-4.39c0-4.54 3.7-8.23 8.25-8.23 2.2 0 4.27.86 5.83 2.41a8.19 8.19 0 0 1 2.41 5.83c0 4.54-3.7 8.25-8.24 8.25zm4.52-6.17c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.16.24-.64.8-.78.97-.15.16-.29.18-.53.06-.25-.13-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.01-.38.11-.5.11-.11.25-.29.37-.43.13-.15.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.13-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.22.25-.87.85-.87 2.07s.9 2.4 1.02 2.56c.12.17 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.47-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.15-1.18-.06-.1-.23-.16-.48-.28z"/></svg>
   <span class="wa-pulse" aria-hidden="true"></span>
 </a>

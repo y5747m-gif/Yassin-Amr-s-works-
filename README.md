@@ -45,6 +45,26 @@ The **Owner** button in the navbar opens a sign-in dialog. When signed in, an
 owner panel appears in the *Our Work* section with the **Analyze & Add** bar and
 ✕ buttons on every card.
 
+### ✏️ Edit literally anything on the site
+
+Next to **Log out** there is an **Edit page text** switch. Turn it on and every
+piece of copy on the page — headings, the flood service cards, the scrolling
+marquee/stream words, the about tags, contact numbers, button labels, even a
+single word inside a sentence — gets a dashed outline. Click it, type the
+change, then press **Enter** or click elsewhere to save; **Esc** cancels, and
+**double-click** reverts that one field back to the built-in default. Nothing
+is hard-coded once it's been touched: saved text is written to
+`data/content.json` (git-ignored) and served to every visitor immediately, in
+whichever language was being edited (English and Arabic are tracked
+separately).
+
+Things that aren't clickable text (the browser tab title, the search-engine
+description, tooltips, the "Add project" placeholder, and the hero showcase
+image links) live in **More site settings**, a small form under the add-project
+bar, with a ↺ button per field to reset it. Editing a contact's phone number —
+inline or in settings — automatically updates every WhatsApp link, the `tel:`
+links, and the footer everywhere that number is quoted.
+
 Credentials come from environment variables — change them before going live:
 
 ```bash
@@ -72,6 +92,9 @@ Security details: password compared with `crypto.timingSafeEqual`, HMAC-signed
 | `POST` | `/api/logout` | — | clears the session |
 | `GET` | `/api/session` | — | `{ owner: true|false }` |
 | `GET` | `/api/analyze?url=…` | public | reads a site's public metadata (SSRF-guarded) |
+| `GET` | `/api/content` | public | every saved text/content override (`{en, ar, site}`) |
+| `PUT` | `/api/content` | owner | save one override — body: `{scope: "en"\|"ar"\|"site", path, value}` |
+| `DELETE` | `/api/content?scope=…&path=…` | owner | revert one override to its built-in default |
 | `GET` | `/healthz` | — | uptime probe |
 
 **Adding a project:** paste a link → the browser reads the page's public metadata
@@ -83,14 +106,15 @@ that ship with the site; delete them from the UI once real work is published.
 ## 📁 Structure
 
 ```
-server.js              Static server + auth + projects API + /api/analyze
+server.js              Static server + auth + projects API + content API + /api/analyze
 seed-projects.json     Demo portfolio entries (first-run seed)
 data/projects.json     Live portfolio, written by the server (git-ignored)
+data/content.json      Every owner-edited word/number/image link (git-ignored)
 public/
   index.html           The page
-  css/style.css        Theme, device frames, flood waves, intro, animations
+  css/style.css        Theme, device frames, flood waves, intro, animations, edit-mode styling
   js/parse.js          Shared metadata parser (browser + Node)
-  js/app.js            i18n, intro, device modes, portfolio, owner session
+  js/app.js            i18n, intro, device modes, portfolio, owner session, inline content editing
   img/screen-*.jpg     Showcase screens
 ```
 
@@ -99,5 +123,7 @@ public/
 **WhatsApp & calls — 01141362626 · 01502701881**
 
 Both numbers appear in the contact section (call / WhatsApp / copy) and the footer;
-the floating button uses the first line. To change them, edit the `CONTACTS` array at
-the top of `public/js/app.js` and the `wa.me` links in `public/index.html`.
+the floating button uses the first line. The numbers now ship as defaults only —
+the owner can change either one live from the site (inline in the contact card,
+or under **More site settings**) and every WhatsApp/`tel:`/footer mention updates
+instantly for all visitors, no code edit required.

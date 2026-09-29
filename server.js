@@ -9,6 +9,9 @@
  *  - GET    /api/session           → { owner: true|false }
  *  - POST   /api/projects          → add a project        (owner only)
  *  - DELETE /api/projects?id=...   → remove a project     (owner only)
+ *  - GET    /api/content           → every saved text/content override (public)
+ *  - PUT    /api/content           → save one override  { scope, path, value } (owner only)
+ *  - DELETE /api/content?scope=&path=  → revert one override to its default   (owner only)
  *
  * Owner credentials come from the environment:
  *      OWNER_USER   (default: owner)
@@ -31,6 +34,7 @@ const PUBLIC_DIR = path.join(__dirname, 'public');
 const DATA_DIR = path.join(__dirname, 'data');
 const PROJECTS_FILE = path.join(DATA_DIR, 'projects.json');
 const SEED_FILE = path.join(__dirname, 'seed-projects.json');
+const CONTENT_FILE = path.join(DATA_DIR, 'content.json');
 const FETCH_TIMEOUT_MS = 20000;
 const MAX_BODY_CHARS = 2_000_000;
 const MAX_JSON_BODY = 256 * 1024;
@@ -212,6 +216,97 @@ function persistProjects() {
     })
     .catch((err) => console.error('Could not save projects:', err.message));
   return writeQueue;
+}
+
+/* ------------------------------ site content -------------------------------
+ * Every editable word on the page (text, headings, list items, contact
+ * numbers, meta tags…) is a "content override". Overrides are stored as a
+ * flat map per scope:
+ *    { en: { "hero.title": "...", "services.items.3.t": "..." },
+ *      ar: { ... },
+ *      site: { "contacts.0.display": "..." } }
+ * The browser ships the built-in defaults (public/js/app.js) and layers
+ * these overrides on top, so the owner can change literally anything —
+ * down to a single word — without redeploying.
+ * -------------------------------------------------------------------------- */
+
+const CONTENT_SCOPES = new Set(['en', 'ar', 'site']);
+const CONTENT_PATH_RE = /^[a-zA-Z][a-zA-Z0-9_.-]{0,140}$/;
+const CONTENT_MAX_LEN = 6000;
+
+let content = { en: {}, ar: {}, site: {} };
+let contentWriteQueue = Promise.resolve();
+
+function loadContent() {
+  try {
+    if (fs.existsSync(CONTENT_FILE)) {
+      const parsed = JSON.parse(fs.readFileSync(CONTENT_FILE, 'utf8'));
+      if (parsed && typeof parsed === 'object') {
+        return {
+          en: (parsed.en && typeof parsed.en === 'object') ? parsed.en : {},
+          ar: (parsed.ar && typeof parsed.ar === 'object') ? parsed.ar : {},
+          site: (parsed.site && typeof parsed.site === 'object') ? parsed.site : {},
+        };
+      }
+    }
+  } catch (err) {
+    console.error('Could not read content.json:', err.message);
+  }
+  return { en: {}, ar: {}, site: {} };
+}
+
+function persistContent() {
+  contentWriteQueue = contentWriteQueue
+    .then(async () => {
+      await fsp.mkdir(DATA_DIR, { recursive: true });
+      await fsp.writeFile(CONTENT_FILE, JSON.stringify(content, null, 2), 'utf8');
+    })
+    .catch((err) => console.error('Could not save content:', err.message));
+  return contentWriteQueue;
+}
+
+function sanitizeContentValue(value) {
+  return String(value ?? '')
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '')
+    .slice(0, CONTENT_MAX_LEN);
+}
+
+async function handleGetContent(res) {
+  return sendJson(res, 200, { ok: true, content });
+}
+
+async function handleSetContent(req, res) {
+  if (!isOwner(req)) return sendJson(res, 401, { ok: false, error: 'unauthorized' });
+  let body;
+  try {
+    body = await readJsonBody(req);
+  } catch {
+    return sendJson(res, 400, { ok: false, error: 'bad-json' });
+  }
+
+  const scope = String(body.scope || '');
+  const path_ = String(body.path || '');
+  if (!CONTENT_SCOPES.has(scope)) return sendJson(res, 400, { ok: false, error: 'bad-scope' });
+  if (!CONTENT_PATH_RE.test(path_)) return sendJson(res, 400, { ok: false, error: 'bad-path' });
+  if (typeof body.value !== 'string') return sendJson(res, 400, { ok: false, error: 'bad-value' });
+
+  const value = sanitizeContentValue(body.value);
+  content[scope][path_] = value;
+  await persistContent();
+  return sendJson(res, 200, { ok: true, scope, path: path_, value });
+}
+
+async function handleDeleteContent(req, res, url) {
+  if (!isOwner(req)) return sendJson(res, 401, { ok: false, error: 'unauthorized' });
+  const scope = String(url.searchParams.get('scope') || '');
+  const path_ = String(url.searchParams.get('path') || '');
+  if (!CONTENT_SCOPES.has(scope)) return sendJson(res, 400, { ok: false, error: 'bad-scope' });
+  if (!CONTENT_PATH_RE.test(path_)) return sendJson(res, 400, { ok: false, error: 'bad-path' });
+  if (Object.prototype.hasOwnProperty.call(content[scope], path_)) {
+    delete content[scope][path_];
+    await persistContent();
+  }
+  return sendJson(res, 200, { ok: true });
 }
 
 function sanitizeText(value, max) {
@@ -466,6 +561,7 @@ function serveStatic(req, res, pathname) {
 /* --------------------------------- server ---------------------------------- */
 
 projects = loadProjects();
+content = loadContent();
 
 const server = http.createServer(async (req, res) => {
   let url;
@@ -504,6 +600,14 @@ const server = http.createServer(async (req, res) => {
       }
       if (req.method === 'POST') return await handleAddProject(req, res);
       if (req.method === 'DELETE') return await handleDeleteProject(req, res, url);
+      res.writeHead(405);
+      return res.end();
+    }
+
+    if (p === '/api/content') {
+      if (req.method === 'GET') return await handleGetContent(res);
+      if (req.method === 'PUT') return await handleSetContent(req, res);
+      if (req.method === 'DELETE') return await handleDeleteContent(req, res, url);
       res.writeHead(405);
       return res.end();
     }
