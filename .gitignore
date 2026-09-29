@@ -1,0 +1,7 @@
+# runtime state written by the server (published projects)
+data/
+
+# misc
+node_modules/
+.DS_Store
+*.log
