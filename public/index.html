@@ -28,6 +28,7 @@
 </script>
 </head>
 <body>
+<div class="cursor-aura" id="cursor-aura" aria-hidden="true"></div>
 
 <!-- ======================= INTRO / SPLASH ======================= -->
 <div class="intro" id="intro" role="presentation">
@@ -134,8 +135,17 @@
       </div>
     </div>
 
-    <!-- floating device showcase -->
-    <div class="hero-device reveal" data-delay="200">
+    <!-- floating 3D device showcase -->
+    <div class="hero-device reveal" data-delay="200" id="hero-visual">
+      <div class="hero-3d-scene" aria-hidden="true">
+        <span class="orb orb-a"></span>
+        <span class="orb orb-b"></span>
+        <span class="glass-cube cube-a"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+        <span class="glass-cube cube-b"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+        <span class="orbit orbit-a"><b></b></span>
+        <span class="orbit orbit-b"><b></b></span>
+        <span class="spark s1">✦</span><span class="spark s2">✦</span><span class="spark s3">✦</span>
+      </div>
       <div class="device-switch" role="group" aria-label="View mode">
         <button type="button" data-device="phone" class="active" data-i18n-title="device.phone" title="Phone">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18.5h2"/></svg>
@@ -315,6 +325,31 @@
       </button>
     </form>
     <p class="modal-foot" data-i18n="owner.foot">Protected session · 12 hours</p>
+  </div>
+</div>
+
+<!-- ======================= PROJECT EDITOR (OWNER) ======================= -->
+<div class="modal" id="project-modal" hidden>
+  <div class="modal-backdrop" data-project-close></div>
+  <div class="modal-card project-editor" role="dialog" aria-modal="true" aria-labelledby="project-editor-title">
+    <button class="modal-x" type="button" data-project-close aria-label="Close">✕</button>
+    <h3 class="modal-title" id="project-editor-title" data-i18n="project.editTitle">Edit project details</h3>
+    <p class="modal-sub" data-i18n="project.editSub">Control the link, titles, descriptions and preview image.</p>
+    <form id="project-edit-form">
+      <input type="hidden" id="project-edit-id">
+      <div class="project-fields">
+        <label class="field"><span class="field-label" data-i18n="project.titleEn">English title</span><input id="project-title" required maxlength="160"></label>
+        <label class="field"><span class="field-label" data-i18n="project.titleAr">Arabic title</span><input id="project-title-ar" dir="rtl" maxlength="160"></label>
+        <label class="field field-wide"><span class="field-label" data-i18n="project.url">Website link</span><input id="project-url" dir="ltr" type="url" required></label>
+        <label class="field"><span class="field-label" data-i18n="project.descEn">English description</span><textarea id="project-description" rows="3" maxlength="420"></textarea></label>
+        <label class="field"><span class="field-label" data-i18n="project.descAr">Arabic description</span><textarea id="project-description-ar" dir="rtl" rows="3" maxlength="420"></textarea></label>
+        <label class="field field-wide"><span class="field-label" data-i18n="project.image">Preview image link</span><input id="project-image" dir="ltr" type="text"></label>
+        <label class="field"><span class="field-label" data-i18n="project.favicon">Icon link</span><input id="project-favicon" dir="ltr" type="text"></label>
+        <label class="field"><span class="field-label" data-i18n="project.tag">Category</span><input id="project-tag" maxlength="40"></label>
+      </div>
+      <p class="form-error" id="project-edit-error" hidden></p>
+      <button class="btn btn-grad modal-submit" type="submit"><span data-i18n="project.save">Save all details</span></button>
+    </form>
   </div>
 </div>
 
