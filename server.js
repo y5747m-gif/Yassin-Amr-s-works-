@@ -524,6 +524,32 @@ async function handleAddProject(req, res) {
   return sendJson(res, 200, { ok: true, project });
 }
 
+async function handleUpdateProject(req, res, url) {
+  if (!isOwner(req)) return sendJson(res, 401, { ok: false, error: 'unauthorized' });
+  const id = String(url.searchParams.get('id') || '');
+  const index = projects.findIndex((p) => p.id === id);
+  if (index < 0) return sendJson(res, 404, { ok: false, error: 'not-found' });
+  let body;
+  try { body = await readJsonBody(req); }
+  catch { return sendJson(res, 400, { ok: false, error: 'bad-json' }); }
+
+  const clean = sanitizeProject(body);
+  if (!clean) return sendJson(res, 400, { ok: false, error: 'invalid-project' });
+  const old = projects[index];
+  const project = {
+    ...clean,
+    id: old.id,
+    titleAr: sanitizeText(body.titleAr, 160),
+    descriptionAr: sanitizeText(body.descriptionAr, 420),
+    demo: Boolean(body.demo),
+    addedAt: old.addedAt || clean.addedAt,
+    updatedAt: new Date().toISOString(),
+  };
+  projects[index] = project;
+  await persistProjects();
+  return sendJson(res, 200, { ok: true, project });
+}
+
 async function handleDeleteProject(req, res, url) {
   if (!isOwner(req)) return sendJson(res, 401, { ok: false, error: 'unauthorized' });
   const id = url.searchParams.get('id');
@@ -599,6 +625,7 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 200, { ok: true, owner: isOwner(req), projects });
       }
       if (req.method === 'POST') return await handleAddProject(req, res);
+      if (req.method === 'PUT') return await handleUpdateProject(req, res, url);
       if (req.method === 'DELETE') return await handleDeleteProject(req, res, url);
       res.writeHead(405);
       return res.end();

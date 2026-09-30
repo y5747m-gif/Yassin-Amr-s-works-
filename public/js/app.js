@@ -112,6 +112,14 @@ const I18N = {
     'form.hint': 'The site’s public data (title, description, image, favicon) is read automatically and turned into a card.',
     'card.visit': 'Visit',
     'card.remove': 'Remove this project',
+    'project.edit': 'Edit project',
+    'project.editTitle': 'Edit project details',
+    'project.editSub': 'Control the link, titles, descriptions and preview image.',
+    'project.titleEn': 'English title', 'project.titleAr': 'Arabic title',
+    'project.descEn': 'English description', 'project.descAr': 'Arabic description',
+    'project.url': 'Website link', 'project.image': 'Preview image link',
+    'project.favicon': 'Icon link', 'project.tag': 'Category',
+    'project.save': 'Save all details', 'project.saved': 'Project details saved.',
     'empty.title': 'Nothing published yet',
     'empty.sub': 'The owner can sign in and add the first project link.',
 
@@ -238,6 +246,14 @@ const I18N = {
     'form.hint': 'تُقرأ بيانات الموقع العامة (العنوان، الوصف، الصورة، الأيقونة) تلقائياً وتتحول إلى بطاقة.',
     'card.visit': 'زيارة',
     'card.remove': 'حذف هذا المشروع',
+    'project.edit': 'تعديل المشروع',
+    'project.editTitle': 'تعديل كل تفاصيل المشروع',
+    'project.editSub': 'تحكم في الرابط والعناوين والوصف وصورة المعاينة.',
+    'project.titleEn': 'العنوان بالإنجليزية', 'project.titleAr': 'العنوان بالعربية',
+    'project.descEn': 'الوصف بالإنجليزية', 'project.descAr': 'الوصف بالعربية',
+    'project.url': 'رابط الموقع', 'project.image': 'رابط صورة المعاينة',
+    'project.favicon': 'رابط الأيقونة', 'project.tag': 'التصنيف',
+    'project.save': 'حفظ جميع التفاصيل', 'project.saved': 'تم حفظ تفاصيل المشروع.',
     'empty.title': 'لا توجد أعمال منشورة بعد',
     'empty.sub': 'يمكن للمالك تسجيل الدخول وإضافة أول رابط مشروع.',
 
@@ -677,8 +693,13 @@ function buildBubbles() {
 function applyDeviceMode(mode, { remember = true } = {}) {
   deviceMode = mode === 'laptop' ? 'laptop' : 'phone';
   if (remember) { try { localStorage.setItem(DEVICE_KEY, deviceMode); } catch {} }
+  document.documentElement.dataset.deviceMode = deviceMode;
   $$('.device').forEach((d) => { d.dataset.mode = deviceMode; });
-  $$('.device-switch button').forEach((b) => b.classList.toggle('active', b.dataset.device === deviceMode));
+  $$('.device-switch button').forEach((b) => {
+    const active = b.dataset.device === deviceMode;
+    b.classList.toggle('active', active);
+    b.setAttribute('aria-pressed', String(active));
+  });
 }
 
 /* hero showcase ------------------------------------------------------------ */
@@ -739,7 +760,7 @@ function cardTemplate(p, index) {
 
   return `
   <article class="work-card" data-id="${esc(p.id)}" style="--rd:${Math.min(index * 80, 480)}ms">
-    ${isOwner ? `<button class="btn-remove" type="button" title="${esc(t('card.remove'))}" aria-label="${esc(t('card.remove'))}">✕</button>` : ''}
+    ${isOwner ? `<div class="project-admin-actions"><button class="btn-project-edit" type="button" title="${esc(t('project.edit'))}" aria-label="${esc(t('project.edit'))}">✎</button><button class="btn-remove" type="button" title="${esc(t('card.remove'))}" aria-label="${esc(t('card.remove'))}">✕</button></div>` : ''}
     <div class="device float" data-mode="${deviceMode}">
       <div class="device-glow" aria-hidden="true"></div>
       <div class="device-body">
@@ -916,6 +937,56 @@ async function analyzeAndAdd(url) {
     btn.disabled = false;
     spinner.hidden = true;
     label.textContent = t('form.btn');
+  }
+}
+
+function openProjectEditor(id) {
+  const p = projects.find((item) => item.id === id);
+  if (!p || !isOwner) return;
+  $('#project-edit-id').value = p.id;
+  $('#project-title').value = p.title || '';
+  $('#project-title-ar').value = p.titleAr || '';
+  $('#project-url').value = p.url || '';
+  $('#project-description').value = p.description || '';
+  $('#project-description-ar').value = p.descriptionAr || '';
+  $('#project-image').value = p.image || '';
+  $('#project-favicon').value = p.favicon || '';
+  $('#project-tag').value = p.tag || '';
+  $('#project-edit-error').hidden = true;
+  $('#project-modal').hidden = false;
+  document.body.classList.add('locked');
+  setTimeout(() => $('#project-title').focus(), 50);
+}
+
+function closeProjectEditor() {
+  $('#project-modal').hidden = true;
+  document.body.classList.remove('locked');
+}
+
+async function saveProjectDetails() {
+  const id = $('#project-edit-id').value;
+  const payload = {
+    title: $('#project-title').value.trim(), titleAr: $('#project-title-ar').value.trim(),
+    url: normalizeUrl($('#project-url').value),
+    description: $('#project-description').value.trim(), descriptionAr: $('#project-description-ar').value.trim(),
+    image: $('#project-image').value.trim() || null, favicon: $('#project-favicon').value.trim() || null,
+    tag: $('#project-tag').value.trim(),
+  };
+  const error = $('#project-edit-error');
+  if (!payload.title || !payload.url) {
+    error.textContent = lang === 'ar' ? 'العنوان والرابط الصحيح مطلوبان.' : 'A title and valid URL are required.';
+    error.hidden = false; return;
+  }
+  try {
+    const res = await fetch('/api/projects?id=' + encodeURIComponent(id), {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+    });
+    const out = await res.json().catch(() => ({}));
+    if (!res.ok || !out.ok) throw new Error(out.error || 'save-failed');
+    projects = projects.map((p) => p.id === id ? out.project : p);
+    renderGrid(); closeProjectEditor(); toast(t('project.saved'), 'success');
+  } catch {
+    error.textContent = t('owner.savefail'); error.hidden = false;
   }
 }
 
@@ -1415,12 +1486,18 @@ function bindEvents() {
     analyzeAndAdd(url);
   });
 
-  // remove project
+  // edit / remove project
   $('#grid').addEventListener('click', (e) => {
-    const btn = e.target.closest('.btn-remove');
-    if (!btn) return;
-    const card = btn.closest('.work-card');
-    if (card) removeProject(card.dataset.id);
+    const editBtn = e.target.closest('.btn-project-edit');
+    const removeBtn = e.target.closest('.btn-remove');
+    const card = e.target.closest('.work-card');
+    if (editBtn && card) { e.preventDefault(); openProjectEditor(card.dataset.id); }
+    if (removeBtn && card) { e.preventDefault(); removeProject(card.dataset.id); }
+  });
+  $('#project-edit-form').addEventListener('submit', (e) => { e.preventDefault(); saveProjectDetails(); });
+  $$('#project-modal [data-project-close]').forEach((el) => el.addEventListener('click', closeProjectEditor));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !$('#project-modal').hidden) closeProjectEditor();
   });
 
   // copy numbers
@@ -1446,8 +1523,74 @@ function bindEvents() {
   });
 }
 
+/* ======================================================================
+   REACTIVE 3D MOTION
+   ====================================================================== */
+function init3DMotion() {
+  const finePointer = window.matchMedia('(pointer: fine)').matches;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!finePointer || reduced) return;
+
+  document.body.classList.add('has-pointer');
+  const aura = $('#cursor-aura');
+  let frame = 0, mouseX = innerWidth / 2, mouseY = innerHeight / 2;
+
+  const paintPointer = () => {
+    frame = 0;
+    if (aura) {
+      aura.style.setProperty('--mx', `${mouseX}px`);
+      aura.style.setProperty('--my', `${mouseY}px`);
+    }
+  };
+  addEventListener('pointermove', (e) => {
+    mouseX = e.clientX; mouseY = e.clientY;
+    if (!frame) frame = requestAnimationFrame(paintPointer);
+  }, { passive: true });
+
+  const hero = $('#hero-visual');
+  if (hero) {
+    hero.addEventListener('pointermove', (e) => {
+      const r = hero.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - .5;
+      const y = (e.clientY - r.top) / r.height - .5;
+      hero.style.setProperty('--ry', `${(x * 11).toFixed(2)}deg`);
+      hero.style.setProperty('--rx', `${(-y * 9).toFixed(2)}deg`);
+    });
+    hero.addEventListener('pointerleave', () => {
+      hero.style.setProperty('--rx', '0deg');
+      hero.style.setProperty('--ry', '0deg');
+    });
+  }
+
+  // Event delegation keeps cards added later by the owner fully interactive.
+  let activeCard = null;
+  document.addEventListener('pointermove', (e) => {
+    const card = e.target.closest('.svc, .about-card, .work-card');
+    if (activeCard && activeCard !== card) {
+      activeCard.style.setProperty('--card-rx', '0deg');
+      activeCard.style.setProperty('--card-ry', '0deg');
+    }
+    activeCard = card;
+    if (!card) return;
+    const r = card.getBoundingClientRect();
+    const px = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+    const py = Math.max(0, Math.min(1, (e.clientY - r.top) / r.height));
+    card.style.setProperty('--card-rx', `${((.5 - py) * 8).toFixed(2)}deg`);
+    card.style.setProperty('--card-ry', `${((px - .5) * 10).toFixed(2)}deg`);
+  }, { passive: true });
+  document.addEventListener('pointerout', (e) => {
+    const card = e.target.closest('.svc, .about-card, .work-card');
+    if (card && !card.contains(e.relatedTarget)) {
+      card.style.setProperty('--card-rx', '0deg');
+      card.style.setProperty('--card-ry', '0deg');
+      if (activeCard === card) activeCard = null;
+    }
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   initIntro();
+  init3DMotion();
   bindEvents();
   buildShowcase();
   buildBubbles();
