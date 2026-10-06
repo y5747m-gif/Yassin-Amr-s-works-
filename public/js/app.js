@@ -1,5 +1,5 @@
 /* ==========================================================================
-   T.W.E Designer — app.js
+   Pixelio — app.js
    Intro splash · bilingual (auto) · the flood · device showcase · owner mode
    ========================================================================== */
 
@@ -18,10 +18,10 @@ const DEFAULT_SHOWCASE = ['/img/screen-1.jpg', '/img/screen-2.jpg', '/img/screen
 
 const I18N = {
   en: {
-    'doc.title': 'T.W.E Designer — Official Studio',
-    'meta.description': 'T.W.E Designer — graphic design, websites, animation, video editing, branding and everything in between. Official studio site.',
-    'brand.name': 'T.W.E<em> Designer</em>',
-    'intro.tag': 'Design · Web · Motion · Everything',
+    'doc.title': 'Pixelio — Official Studio',
+    'meta.description': 'Pixelio — every kind of graphic design and complete website design. Logos, identity, social media, print, UI/UX, stores and more. Official studio site.',
+    'brand.name': 'PIXELIO<em>Creative Media Solutions</em>',
+    'intro.tag': 'Graphic Design · Web Design',
     'intro.skip': 'Skip',
 
     'nav.services': 'Services',
@@ -66,11 +66,12 @@ const I18N = {
     'settings.cardRemove': '“Remove project” tooltip',
     'settings.showcase': 'Hero showcase image',
 
-    'hero.eyebrow': 'Creative Studio — Egypt',
-    'hero.title': 'We design <span class="grad">everything</span><br>your brand needs.',
-    'hero.sub': 'Graphic design, websites, animation, video editing, branding and identity — one studio, every service, delivered with obsessive detail.',
+    'hero.eyebrow': 'Pixelio — Creative Studio',
+    'hero.title': 'We turn your idea into a <span class="grad">professional digital presence</span>',
+    'hero.sub': 'We craft a complete digital experience for you.',
     'hero.cta1': 'See our work',
-    'hero.cta2': 'WhatsApp us',
+    'hero.order': 'Order your service',
+    'hero.orderMsg': 'Hello Pixelio 👋 I would like to order a service.',
 
     'stat.projects': 'Projects',
     'stat.services': '12+',
@@ -81,26 +82,29 @@ const I18N = {
     'device.phone': 'Phone view',
     'device.laptop': 'Computer view',
 
-    'marquee': ['Graphic Design', 'Web Development', 'Animation', 'Video Editing', 'Branding', 'UI / UX', 'Social Media', '3D & Visuals', 'Logo Design', 'Advertising'],
+    'marquee': ['Logo Design', 'Brand Identity', 'Social Media', 'Advertising', 'Print', 'Photo Retouch', 'Web Design', 'UI / UX', 'Landing Pages', 'E-commerce'],
 
-    'services.kicker': 'The Flood',
-    'services.title': 'A <span class="grad">flood</span> of services',
-    'services.sub': 'Everything a brand needs, pouring in from one studio — design, code, motion and edit.',
+    'services.kicker': 'What we do',
+    'services.title': 'Graphic design & <span class="grad">websites</span>',
+    'services.sub': 'Every type of graphic design and website design — from a logo to a full online store — under one roof.',
     'services.items': [
-      { t: 'Graphic Design', d: 'Posters, social creatives, packaging and print — pixel-perfect and on-brand.' },
-      { t: 'Website Design', d: 'Landing pages, stores and company sites: fast, responsive, built to convert.' },
-      { t: 'Animation & Motion', d: 'Logo stings, explainer animation, kinetic typography and UI motion.' },
-      { t: 'Video Editing', d: 'Reels, ads and long-form edits with colour grading, sound and subtitles.' },
-      { t: 'Branding & Identity', d: 'Logo, palette, typography and a guideline book your team can actually use.' },
+      { t: 'Graphic Design', d: 'Posters, flyers, menus and every kind of digital & print creative.' },
+      { t: 'Logo & Brand Identity', d: 'A logo your customers remember, plus colors, fonts and a full brand book.' },
+      { t: 'Social Media Designs', d: 'Posts, covers, stories and monthly template sets that stop the scroll.' },
+      { t: 'Advertising Designs', d: 'Ad creatives for Meta, TikTok, YouTube and outdoor billboards.' },
+      { t: 'Photo Retouching', d: 'Retouching, manipulation, background removal and color matching.' },
+      { t: 'Presentations & Profiles', d: 'Investor decks and company profiles designed to hold attention.' },
+      { t: 'Website Design', d: 'Custom, responsive, fast websites designed to convert visitors.' },
       { t: 'UI / UX Design', d: 'Research, wireframes and polished interfaces prototyped in Figma.' },
-      { t: 'Social Media', d: 'Monthly content plans, templates and campaign creatives that get shared.' },
-      { t: '3D & Visuals', d: 'Product renders, mockups and 3D scenes that make the work feel real.' },
-      { t: 'Ads & Campaigns', d: 'Creative concepts plus the assets for Meta, TikTok, YouTube and Google.' },
-      { t: 'Photo Retouching', d: 'Product and portrait retouching, background removal, colour matching.' },
-      { t: 'Presentations', d: 'Investor decks and company profiles designed to hold attention.' },
-      { t: 'Maintenance & Support', d: 'Hosting, updates, speed and SEO care after launch — we do not disappear.' },
+      { t: 'Landing Pages', d: 'High-converting landing pages for campaigns and launches.' },
+      { t: 'E-commerce Stores', d: 'Complete stores with payment, shipping and product management.' },
+      { t: 'Web Development', d: 'Clean, fast code — from company sites to custom web apps.' },
+      { t: 'Hosting & Care', d: 'Hosting, speed, SEO and updates after launch — we do not disappear.' },
     ],
-    'services.stream': ['Logos', 'Reels', 'Landing Pages', 'Menus', 'Banners', 'Explainer Videos', 'Brand Books', 'Shopify', 'WordPress', 'React', 'Figma', 'After Effects', 'Premiere Pro', 'Illustrator', 'Photoshop', '3D Mockups', 'Motion Graphics', 'SEO', 'Business Cards', 'Packaging'],
+    'services.order': 'Order service',
+    'services.orderCta': 'Order your service now',
+    'services.orderMsg': 'Hello Pixelio 👋 I would like to order: {s}',
+    'services.stream': ['Logos', 'Covers', 'Stories', 'Banners', 'Menus', 'Flyers', 'Packaging', 'Business Cards', 'Landing Pages', 'Online Stores', 'WordPress', 'React', 'Figma', 'Photoshop', 'Illustrator', 'SEO', 'Motion', 'Mockups'],
 
     'work.kicker': 'Portfolio',
     'work.title': 'Websites we <span class="grad">built</span>',
@@ -125,11 +129,11 @@ const I18N = {
 
     'about.kicker': 'Who we are',
     'about.title': 'About the studio',
-    'about.text': 'T.W.E Designer is a full-service creative studio. We design brands, build websites, animate stories and edit video — all under one roof, so your identity stays consistent everywhere it appears. Fast delivery, honest pricing, and work we are proud to sign.',
-    'about.tags': ['Graphic Design', 'Web Design', 'Animation', 'Video Editing', 'Branding', 'UI/UX', '3D', 'Social Media', 'Ads'],
+    'about.text': 'Pixelio is a creative studio specialized in all types of graphic design and website design. Logos, identities, social media and print on one side; fast, beautiful websites on the other — all under one roof, so your brand stays consistent everywhere. Fast delivery, honest pricing, and work we are proud to sign.',
+    'about.tags': ['Graphic Design', 'Logo & Identity', 'Social Media', 'Print', 'Web Design', 'UI/UX', 'E-commerce', 'SEO'],
 
     'contact.kicker': 'Contact',
-    'contact.title': 'Let’s build something <span class="grad">great</span>.',
+    'contact.title': 'Order your <span class="grad">service</span> now.',
     'contact.sub': 'Call us or message on WhatsApp — we answer fast.',
     'contact.line1': 'Main line',
     'contact.line2': 'Second line',
@@ -139,8 +143,8 @@ const I18N = {
     'contact.copied': 'Copied!',
     'contact.note': 'Available every day · 10:00 — 02:00 (Cairo time)',
 
-    'footer.left': 'T.W.E Designer — Creative Studio, Egypt',
-    'footer.right': '© 2026 · T.W.E Designer',
+    'footer.left': 'Pixelio — Creative Studio, Egypt',
+    'footer.right': '© 2026 · Pixelio',
 
     'toast.duplicate': 'That link is already in the portfolio.',
     'toast.added': 'published to the portfolio',
@@ -152,10 +156,10 @@ const I18N = {
   },
 
   ar: {
-    'doc.title': 'T.W.E Designer — الموقع الرسمي',
-    'meta.description': 'T.W.E Designer — جرافيك ديزاين، مواقع إلكترونية، أنيميشن، مونتاج فيديو، هوية بصرية وكل ما بينهما. الموقع الرسمي للاستوديو.',
-    'brand.name': 'T.W.E<em> Designer</em>',
-    'intro.tag': 'تصميم · مواقع · أنيميشن · كل شيء',
+    'doc.title': 'Pixelio — الموقع الرسمي',
+    'meta.description': 'Pixelio — جميع أنواع الجرافيك ديزاين وتصميم المواقع الإلكترونية. شعارات، هوية بصرية، سوشيال ميديا، مطبوعات، واجهات، متاجر والمزيد. الموقع الرسمي للاستوديو.',
+    'brand.name': 'PIXELIO<em>Creative Media Solutions</em>',
+    'intro.tag': 'جرافيك ديزاين · تصميم مواقع',
     'intro.skip': 'تخطي',
 
     'nav.services': 'خدماتنا',
@@ -200,11 +204,12 @@ const I18N = {
     'settings.cardRemove': 'تلميح "حذف المشروع"',
     'settings.showcase': 'صورة عرض الواجهة الرئيسية',
 
-    'hero.eyebrow': 'استوديو إبداعي — مصر',
-    'hero.title': 'نصمم <span class="grad">كل شيء</span><br>تحتاجه علامتك.',
-    'hero.sub': 'جرافيك ديزاين، مواقع إلكترونية، أنيميشن، مونتاج، وهوية بصرية كاملة — استوديو واحد، كل الخدمات، بإتقان في أدق التفاصيل.',
+    'hero.eyebrow': 'Pixelio — استوديو إبداعي',
+    'hero.title': 'حوّل فكرتك إلى <span class="grad">حضور رقمي احترافي</span>',
+    'hero.sub': 'نصنع لك تجربة رقمية متكاملة.',
     'hero.cta1': 'شاهد أعمالنا',
-    'hero.cta2': 'راسلنا واتساب',
+    'hero.order': 'اطلب خدمتك الآن',
+    'hero.orderMsg': 'مرحباً Pixelio 👋 أرغب في طلب خدمة.',
 
     'stat.projects': 'مشروع',
     'stat.services': '+12',
@@ -215,26 +220,29 @@ const I18N = {
     'device.phone': 'عرض الهاتف',
     'device.laptop': 'عرض الكمبيوتر',
 
-    'marquee': ['جرافيك ديزاين', 'برمجة مواقع', 'أنيميشن', 'مونتاج فيديو', 'هوية بصرية', 'واجهات UI/UX', 'سوشيال ميديا', 'ثري دي', 'تصميم شعارات', 'إعلانات'],
+    'marquee': ['تصميم شعارات', 'هوية بصرية', 'سوشيال ميديا', 'إعلانات', 'مطبوعات', 'ريتاتش صور', 'تصميم مواقع', 'UI / UX', 'صفحات هبوط', 'متاجر إلكترونية'],
 
-    'services.kicker': 'الطوفان',
-    'services.title': '<span class="grad">طوفان</span> من الخدمات',
-    'services.sub': 'كل ما تحتاجه علامتك يتدفق من استوديو واحد — تصميم، برمجة، حركة، ومونتاج.',
+    'services.kicker': 'ما نقدمه',
+    'services.title': 'جرافيك ديزاين <span class="grad">وتصميم مواقع</span>',
+    'services.sub': 'جميع أنواع الجرافيك ديزاين وتصميم المواقع — من الشعار حتى المتجر الإلكتروني المتكامل — تحت سقف واحد.',
     'services.items': [
-      { t: 'جرافيك ديزاين', d: 'بوسترات، تصاميم سوشيال ميديا، تغليف ومطبوعات بجودة احترافية.' },
-      { t: 'تصميم المواقع', d: 'صفحات هبوط، متاجر، ومواقع شركات — سريعة، متجاوبة، وتحقق مبيعات.' },
-      { t: 'أنيميشن وموشن', d: 'حركة الشعار، فيديو توضيحي، تايبوجرافي متحركة، وحركة الواجهات.' },
-      { t: 'مونتاج فيديو', d: 'ريلز وإعلانات وفيديوهات طويلة مع تصحيح ألوان وصوت وترجمة.' },
-      { t: 'هوية بصرية', d: 'شعار، ألوان، خطوط، ودليل هوية كامل يسهل على فريقك استخدامه.' },
-      { t: 'تصميم UI / UX', d: 'بحث، مخططات أولية، وواجهات نهائية مع نموذج تفاعلي على فيجما.' },
-      { t: 'إدارة سوشيال ميديا', d: 'خطط محتوى شهرية، قوالب جاهزة، وتصاميم حملات قابلة للانتشار.' },
-      { t: 'ثري دي ومرئيات', d: 'رندر منتجات، موك أب، ومشاهد ثلاثية الأبعاد تجعل العمل واقعياً.' },
-      { t: 'إعلانات وحملات', d: 'أفكار إبداعية وكل المواد لإعلانات ميتا وتيك توك ويوتيوب وجوجل.' },
-      { t: 'ريتاتش وتعديل صور', d: 'تنقيح صور المنتجات والبورتريه، إزالة الخلفية، ومطابقة الألوان.' },
-      { t: 'عروض تقديمية', d: 'بروفايل الشركة وعروض المستثمرين بتصميم يجذب الانتباه حتى آخر شريحة.' },
-      { t: 'صيانة ودعم', d: 'استضافة، تحديثات، سرعة، وتحسين محركات البحث بعد الإطلاق — لا نختفي.' },
+      { t: 'الجرافيك ديزاين', d: 'بوسترات وفلايرات ومينيوهات وكل أنواع التصاميم الرقمية والمطبوعة.' },
+      { t: 'الشعارات والهوية البصرية', d: 'شعار لا يُنسى، مع الألوان والخطوط ودليل هوية كامل.' },
+      { t: 'تصاميم السوشيال ميديا', d: 'بوستات وأغلفة وستوريز ومجموعات قوالب شهرية توقف التمرير.' },
+      { t: 'التصاميم الإعلانية', d: 'تصاميم إعلانية لميتا وتيك توك ويوتيوب واللوحات الخارجية.' },
+      { t: 'ريتاتش ومعالجة الصور', d: 'تنقيح وتعديل الصور، إزالة الخلفيات، ومطابقة الألوان.' },
+      { t: 'العروض والبروفايل', d: 'عروض المستثمرين وبروفايل الشركة بتصميم يجذب الانتباه.' },
+      { t: 'تصميم المواقع', d: 'مواقع مخصصة متجاوبة وسريعة مصممة لتحويل الزوار إلى عملاء.' },
+      { t: 'تصميم الواجهات UI/UX', d: 'بحث ومخططات وواجهات نهائية مع نموذج تفاعلي على فيجما.' },
+      { t: 'صفحات الهبوط', d: 'صفحات هبوط عالية التحويل للحملات والإطلاقات.' },
+      { t: 'المتاجر الإلكترونية', d: 'متاجر متكاملة مع الدفع والشحن وإدارة المنتجات.' },
+      { t: 'تطوير المواقع', d: 'كود نظيف وسريع — من مواقع الشركات إلى تطبيقات الويب.' },
+      { t: 'الاستضافة والصيانة', d: 'استضافة وسرعة وتحسين محركات البحث وتحديثات بعد الإطلاق — لا نختفي.' },
     ],
-    'services.stream': ['شعارات', 'ريلز', 'صفحات هبوط', 'مينيو', 'بانرات', 'فيديو توضيحي', 'دليل هوية', 'شوبيفاي', 'ووردبريس', 'رياكت', 'فيجما', 'أفتر إفكتس', 'بريمير برو', 'إليستريتور', 'فوتوشوب', 'موك أب ثري دي', 'موشن جرافيك', 'سيو', 'كروت شخصية', 'تغليف'],
+    'services.order': 'اطلب الخدمة',
+    'services.orderCta': 'اطلب خدمتك الآن',
+    'services.orderMsg': 'مرحباً Pixelio 👋 أرغب في طلب خدمة: {s}',
+    'services.stream': ['شعارات', 'أغلفة', 'ستوريز', 'بانرات', 'مينيوهات', 'فلايرات', 'تغليف', 'كروت شخصية', 'صفحات هبوط', 'متاجر إلكترونية', 'ووردبريس', 'رياكت', 'فيجما', 'فوتوشوب', 'إليستريتور', 'سيو', 'موشن', 'موك أب'],
 
     'work.kicker': 'أعمالنا',
     'work.title': 'مواقع <span class="grad">أنشأناها</span>',
@@ -259,11 +267,11 @@ const I18N = {
 
     'about.kicker': 'من نحن',
     'about.title': 'عن الاستوديو',
-    'about.text': 'T.W.E Designer استوديو إبداعي متكامل. نصمم العلامات التجارية، نبني المواقع، نصنع الأنيميشن، ونحرر الفيديو — كل ذلك تحت سقف واحد لتبقى هويتك متناسقة أينما ظهرت. تسليم سريع، أسعار عادلة، وأعمال نفخر بتوقيعها.',
-    'about.tags': ['جرافيك ديزاين', 'تصميم مواقع', 'أنيميشن', 'مونتاج', 'هوية بصرية', 'UI/UX', 'ثري دي', 'سوشيال ميديا', 'إعلانات'],
+    'about.text': 'Pixelio استوديو إبداعي متخصص في جميع أنواع الجرافيك ديزاين وتصميم المواقع. شعارات وهويات وتصاميم سوشيال ميديا ومطبوعات من ناحية، ومواقع إلكترونية سريعة وأنيقة من ناحية أخرى — كل ذلك تحت سقف واحد لتبقى هويتك متناسقة في كل مكان. تسليم سريع، أسعار عادلة، وأعمال نفخر بتوقيعها.',
+    'about.tags': ['جرافيك ديزاين', 'شعارات وهوية', 'سوشيال ميديا', 'مطبوعات', 'تصميم مواقع', 'UI/UX', 'متاجر إلكترونية', 'سيو'],
 
     'contact.kicker': 'تواصل معنا',
-    'contact.title': 'لنصنع شيئاً <span class="grad">مذهلاً</span>.',
+    'contact.title': 'اطلب <span class="grad">خدمتك</span> الآن.',
     'contact.sub': 'اتصل بنا أو راسلنا على واتساب — نرد بسرعة.',
     'contact.line1': 'الخط الأول',
     'contact.line2': 'الخط الثاني',
@@ -273,8 +281,8 @@ const I18N = {
     'contact.copied': 'تم النسخ!',
     'contact.note': 'متاحون يومياً · من 10 صباحاً حتى 2 بعد منتصف الليل (توقيت القاهرة)',
 
-    'footer.left': 'T.W.E Designer — استوديو إبداعي، مصر',
-    'footer.right': '© 2026 · جميع الحقوق محفوظة T.W.E Designer',
+    'footer.left': 'Pixelio — استوديو إبداعي، مصر',
+    'footer.right': '© 2026 · جميع الحقوق محفوظة Pixelio',
 
     'toast.duplicate': 'هذا الرابط موجود بالفعل في المعرض.',
     'toast.added': 'تمت إضافته إلى المعرض',
@@ -474,7 +482,7 @@ function introParticles() {
   resize();
   addEventListener('resize', resize);
 
-  const COLORS = ['#21d4fd', '#8b5cf6', '#ffc861'];
+  const COLORS = ['#168cff', '#6c3bff', '#e83baf'];
   const count = innerWidth < 600 ? 46 : 90;
   for (let i = 0; i < count; i++) {
     dots.push({
@@ -500,7 +508,7 @@ function introParticles() {
       if (d.x < 0 || d.x > w) d.vx *= -1;
       if (d.y < 0 || d.y > h) d.vy *= -1;
 
-      ctx.globalAlpha = d.a;
+      ctx.globalAlpha = d.a * .8;
       ctx.fillStyle = d.c;
       ctx.shadowBlur = 12 * dpr;
       ctx.shadowColor = d.c;
@@ -511,7 +519,7 @@ function introParticles() {
     ctx.shadowBlur = 0;
     // link nearby particles
     ctx.globalAlpha = .16;
-    ctx.strokeStyle = '#7dd3fc';
+    ctx.strokeStyle = '#8fb6ff';
     ctx.lineWidth = dpr * .6;
     for (let i = 0; i < dots.length; i++) {
       for (let j = i + 1; j < dots.length; j++) {
@@ -637,27 +645,38 @@ function buildTags() {
    ====================================================================== */
 
 const SVC_ICONS = [
-  '<path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/>',
-  '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4M7 8l-2 2 2 2M17 8l2 2-2 2M13.5 7l-3 6"/>',
-  '<circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4V8z"/>',
-  '<path d="M15 10l4.55-2.28A1 1 0 0 1 21 8.62v6.76a1 1 0 0 1-1.45.89L15 14"/><rect x="3" y="6" width="12" height="12" rx="2"/>',
-  '<path d="M12 2l2.6 6.6L21 11l-6.4 2.4L12 20l-2.6-6.6L3 11l6.4-2.4z"/>',
-  '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><circle cx="17.5" cy="17.5" r="3.5"/>',
-  '<path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>',
-  '<path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M12 12l9-5M12 12v10M12 12L3 7"/>',
-  '<path d="M3 11l19-9-9 19-2-8-8-2z"/>',
-  '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
-  '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M6 21h12M12 17v4M6 8h6M6 12h9"/>',
-  '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
+  /* graphic design */   '<path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/>',
+  /* logo & identity */  '<path d="M12 2l2.6 6.6L21 11l-6.4 2.4L12 20l-2.6-6.6L3 11l6.4-2.4z"/>',
+  /* social media */     '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  /* advertising */      '<path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>',
+  /* photo retouch */    '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>',
+  /* presentations */    '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M6 21h12M12 17v4M6 8h6M6 12h9"/>',
+  /* website design */   '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+  /* ui / ux */          '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><circle cx="17.5" cy="17.5" r="3.5"/>',
+  /* landing pages */    '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/>',
+  /* e-commerce */       '<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>',
+  /* web development */  '<path d="M16 18l6-6-6-6"/><path d="M8 6l-6 6 6 6"/>',
+  /* hosting & care */   '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
 ];
+
+/* WhatsApp deep link with a prefilled message (kept in sync with the owner's numbers). */
+const waLink = (e164, msg) =>
+  `https://wa.me/${e164}${msg ? '?text=' + encodeURIComponent(msg) : ''}`;
+
+const WA_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2c-5.46 0-9.9 4.44-9.9 9.9 0 1.75.46 3.45 1.32 4.95L2 22l5.3-1.38a9.9 9.9 0 0 0 4.74 1.2h.01c5.46 0 9.9-4.44 9.9-9.9 0-2.64-1.03-5.13-2.9-7A9.82 9.82 0 0 0 12.04 2zm0 18.06h-.01a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.12.82.83-3.05-.2-.31a8.22 8.22 0 0 1-1.26-4.39c0-4.54 3.7-8.23 8.25-8.23 2.2 0 4.27.86 5.83 2.41a8.19 8.19 0 0 1 2.41 5.83c0 4.54-3.7 8.25-8.24 8.25zm4.52-6.17c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.16.24-.64.8-.78.97-.15.16-.29.18-.53.06-.25-.13-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.01-.38.11-.5.11-.11.25-.29.37-.43.13-.15.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.13-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.22.25-.87.85-.87 2.07s.9 2.4 1.02 2.56c.12.17 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.47-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.15-1.18-.06-.1-.23-.16-.48-.28z"/></svg>';
 
 function buildServices() {
   const grid = $('#services-grid');
   if (!grid) return;
   const items = effectiveList('services.items');
   const defaults = baseText(lang, 'services.items') || [];
+  const main = effectiveContacts()[0];
+  const orderLabel = t('services.order');
+  const orderDefault = baseText(lang, 'services.order') ?? baseText('en', 'services.order') ?? '';
   grid.innerHTML = items
-    .map((s, i) => `
+    .map((s, i) => {
+      const msg = String(t('services.orderMsg')).replace('{s}', s.t);
+      return `
       <article class="svc" style="--rd:${(i % 4) * 90 + Math.floor(i / 4) * 120}ms; --rot:${i % 2 ? 2 : -2}deg">
         <span class="svc-num">${String(i + 1).padStart(2, '0')}</span>
         <span class="svc-icon" aria-hidden="true">
@@ -665,10 +684,30 @@ function buildServices() {
         </span>
         <h3 data-edit-scope="${lang}" data-edit-path="services.items.${i}.t" data-edit-default="${esc(defaults[i] ? defaults[i].t : '')}">${esc(s.t)}</h3>
         <p data-edit-scope="${lang}" data-edit-path="services.items.${i}.d" data-edit-default="${esc(defaults[i] ? defaults[i].d : '')}">${esc(s.d)}</p>
-      </article>`)
+        <a class="svc-order" data-msg="${esc(msg)}" href="${esc(waLink(main ? main.e164 : '', msg))}" target="_blank" rel="noopener">
+          ${WA_SVG}
+          <span data-edit-scope="${lang}" data-edit-path="services.order" data-edit-default="${esc(orderDefault)}">${esc(orderLabel)}</span>
+        </a>
+      </article>`;
+    })
     .join('');
   observeReveals();
   refreshEditables();
+}
+
+/** Keep every per-card order button's WhatsApp link in sync with the
+ *  current card title, language and (owner-editable) phone number. */
+function refreshServiceOrderLinks() {
+  const main = effectiveContacts()[0];
+  if (!main) return;
+  $$('.svc').forEach((card) => {
+    const a = card.querySelector('.svc-order');
+    const h3 = card.querySelector('h3');
+    if (!a || !h3) return;
+    const msg = String(t('services.orderMsg')).replace('{s}', h3.textContent.trim());
+    a.dataset.msg = msg;
+    a.href = waLink(main.e164, msg);
+  });
 }
 
 function buildBubbles() {
@@ -1134,6 +1173,7 @@ async function resetField(el) {
  *  quotes the same piece of content (links, meta tags, card tooltips…). */
 function syncAfterContentChange(path) {
   if (path.startsWith('contacts.')) syncContactLinks();
+  if (path.startsWith('services.')) refreshServiceOrderLinks();
   if (path.startsWith('showcase.')) buildShowcase();
   applyAttributeBindings();
   if (path === 'card.remove' || path === 'work.demo' || path === 'card.visit') renderGrid();
@@ -1369,10 +1409,13 @@ function syncContactLinks() {
   const contacts = effectiveContacts();
   const main = contacts[0];
   if (!main) return;
-  const heroWa = $('#hero-wa-link');
-  if (heroWa) heroWa.href = `https://wa.me/${main.e164}`;
+  const heroOrder = $('#hero-order-link');
+  if (heroOrder) heroOrder.href = waLink(main.e164, t('hero.orderMsg'));
+  const servicesCta = $('#services-order-btn');
+  if (servicesCta) servicesCta.href = waLink(main.e164, t('hero.orderMsg'));
   const fab = $('#wa-fab-link');
   if (fab) fab.href = `https://wa.me/${main.e164}`;
+  refreshServiceOrderLinks();
   const footer = $('#footer-phones');
   if (footer) footer.textContent = contacts.map((c) => c.display).join(' · ');
 }
@@ -1526,6 +1569,68 @@ function bindEvents() {
 /* ======================================================================
    REACTIVE 3D MOTION
    ====================================================================== */
+/* ----------------------------------------------------------------------
+ * FLOATING GLASS CUBES
+ * A light field of transparent 3D cubes (and a few light particles) drifts
+ * across the page. Each one spins slowly on its own and glides very gently
+ * with the scroll — subtle depth, never a heavy parallax.
+ * -------------------------------------------------------------------- */
+const CUBE_PLAN = [
+  { x: 4,  y: 12, s: 86, c: 'c-blue',   f: -0.035, spin: 30, bob: 11, d: 0 },
+  { x: 88, y: 18, s: 64, c: 'c-cyan',   f:  0.045, spin: 24, bob: 9,  d: -3 },
+  { x: 14, y: 52, s: 46, c: 'c-violet', f:  0.055, spin: 21, bob: 8,  d: -5 },
+  { x: 79, y: 58, s: 96, c: 'c-pink',   f: -0.05,  spin: 34, bob: 13, d: -2 },
+  { x: 46, y: 78, s: 38, c: 'c-cyan',   f:  0.06,  spin: 18, bob: 7,  d: -6 },
+  { x: 92, y: 84, s: 56, c: 'c-violet', f: -0.04,  spin: 27, bob: 10, d: -1 },
+  { x: 6,  y: 86, s: 70, c: 'c-blue',   f:  0.038, spin: 32, bob: 12, d: -4 },
+];
+
+const PARTICLE_PLAN = [
+  { x: 24, y: 24, s: 6, c: 'rgba(37,199,255,.5)',  f: 0.07, bob: 13, d: 0 },
+  { x: 62, y: 16, s: 4, c: 'rgba(108,59,255,.45)', f: -0.05, bob: 11, d: -3 },
+  { x: 34, y: 66, s: 5, c: 'rgba(232,59,175,.4)',  f: 0.06, bob: 15, d: -6 },
+  { x: 70, y: 40, s: 4, c: 'rgba(22,140,255,.45)', f: -0.06, bob: 12, d: -2 },
+  { x: 88, y: 70, s: 6, c: 'rgba(37,199,255,.4)',  f: 0.05, bob: 14, d: -8 },
+];
+
+function buildCubeField() {
+  const field = $('#cube-field');
+  if (!field) return;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced) { field.innerHTML = ''; return; }
+
+  const small = window.matchMedia('(max-width: 760px)').matches;
+  const cubes = small ? CUBE_PLAN.filter((_, i) => i % 2 === 0) : CUBE_PLAN;
+  const dots = small ? PARTICLE_PLAN.slice(0, 2) : PARTICLE_PLAN;
+
+  field.innerHTML =
+    cubes.map((c) => `
+      <span class="pcube ${c.c}" data-f="${c.f}"
+            style="left:${c.x}%; top:${c.y}%; --s:${small ? Math.round(c.s * .68) : c.s}px; --spin:${c.spin}s; --bob:${c.bob}s; --d:${c.d}s">
+        <span class="pcube-f"><span class="pcube-i"><i></i><i></i><i></i><i></i><i></i><i></i></span></span>
+      </span>`).join('') +
+    dots.map((p) => `
+      <span class="particle" data-f="${p.f}"
+            style="left:${p.x}%; top:${p.y}%; --ps:${p.s}px; --pc:${p.c}; --bob:${p.bob}s; --d:${p.d}s"></span>`).join('');
+
+  const movers = Array.from(field.children);
+  let ticking = false;
+  const place = () => {
+    const y = window.scrollY || 0;
+    movers.forEach((el) => {
+      el.style.setProperty('--sy', (y * parseFloat(el.dataset.f || 0)).toFixed(1));
+    });
+    ticking = false;
+  };
+  const onScrollCubes = () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(place);
+  };
+  addEventListener('scroll', onScrollCubes, { passive: true });
+  place();
+}
+
 function init3DMotion() {
   const finePointer = window.matchMedia('(pointer: fine)').matches;
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1591,6 +1696,7 @@ function init3DMotion() {
 document.addEventListener('DOMContentLoaded', () => {
   initIntro();
   init3DMotion();
+  buildCubeField();
   bindEvents();
   buildShowcase();
   buildBubbles();

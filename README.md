@@ -1,7 +1,11 @@
-# T.W.E Designer — Official Site
+# Pixelio — Official Site
 
-A cinematic, bilingual (العربية / English) site for **T.W.E Designer** — a full-service
-creative studio: graphic design, websites, animation, video editing, branding and more.
+A bright, premium, bilingual (العربية / English) site for **Pixelio — Creative Media
+Solutions** — a creative studio offering all types of graphic design and website design.
+
+**Visual identity:** clean white surface (`#ffffff` / `#f7f9fc`), navy text (`#14294a`) and the
+Pixelio gradient blue → violet → pink (`#168cff → #6c3bff → #e83baf`), with floating transparent
+3D glass cubes, soft glows and thin-line gradient icons.
 
 Zero dependencies. Node 18+ only.
 
@@ -15,9 +19,9 @@ node server.js          # → http://localhost:3000   (PORT env to change)
 
 | Section | What happens |
 |---|---|
-| **Intro splash** | A short animated opener: particles converge, the letters **T . W . E** assemble in 3D with a light sweep, `DESIGNER` spaces out, a gradient line draws, then a bar-wipe reveals the site. Skippable (button or `Esc`), plays once per browser session, disabled under `prefers-reduced-motion`. |
+| **Intro splash** | A short animated opener: particles converge, the letters **P I X E L I O** assemble in 3D with a light sweep, `STUDIO` spaces out, a gradient line draws, then a bar-wipe reveals the site. Skippable (button or `Esc`), plays once per browser session, disabled under `prefers-reduced-motion`. |
 | **Hero** | Headline, stats and a **floating device** that shows real site screens. |
-| **The Flood (الطوفان)** | Animated wave layers + rising bubbles behind 12 service cards that surge up in a staggered cascade, followed by three counter-scrolling streams of keywords. |
+| **The Flood (الطوفان)** | Animated wave layers + rising bubbles behind 12 service cards (graphic design + website design), each with an **Order service** WhatsApp button that surge up in a staggered cascade, followed by three counter-scrolling streams of keywords. |
 | **Our Work** | Every project is displayed **inside a floating device** — a phone on mobile, a laptop on desktop. Tap a screen to open the live site. |
 | **About / Contact** | Studio blurb, skill tags, and both phone lines with call / WhatsApp / copy actions, plus a floating WhatsApp button. |
 
@@ -112,7 +116,7 @@ data/projects.json     Live portfolio, written by the server (git-ignored)
 data/content.json      Every owner-edited word/number/image link (git-ignored)
 public/
   index.html           The page
-  css/style.css        Theme, device frames, flood waves, intro, animations, edit-mode styling
+  css/style.css        Light theme tokens, glass cubes, device frames, waves, intro, edit-mode styling
   js/parse.js          Shared metadata parser (browser + Node)
   js/app.js            i18n, intro, device modes, portfolio, owner session, inline content editing
   img/screen-*.jpg     Showcase screens

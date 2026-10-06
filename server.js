@@ -1,5 +1,5 @@
 /**
- * T.W.E Designer — official site server (zero dependencies, Node 18+)
+ * Pixelio — official site server (zero dependencies, Node 18+)
  *
  *  - Serves the static site from ./public
  *  - GET    /api/analyze?url=...   → reads a website's public metadata
@@ -655,6 +655,6 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`T.W.E Designer → http://localhost:${PORT}`);
+  console.log(`Pixelio → http://localhost:${PORT}`);
   console.log(`Owner login: user "${OWNER_USER}" (set OWNER_USER / OWNER_PASS to change)`);
 });
