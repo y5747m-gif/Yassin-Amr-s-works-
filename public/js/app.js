@@ -12,7 +12,10 @@ const DEFAULT_CONTACTS = [
   { local: '01502701881', e164: '201502701881', display: '0150 270 1881', labelKey: 'contact.line2' },
 ];
 
-const DEFAULT_SHOWCASE = ['/img/screen-1.jpg', '/img/screen-2.jpg', '/img/screen-3.jpg', '/img/screen-4.jpg'];
+// The hero only shows actual published projects (or images the owner explicitly
+// chooses in settings). No stock/demo website screens are bundled with the site.
+const DEFAULT_SHOWCASE = [];
+const SHOWCASE_SLOTS = 4;
 
 /* --------------------------------- i18n ------------------------------------ */
 
@@ -64,7 +67,7 @@ const I18N = {
     'settings.devicePhone': 'Phone-view tooltip',
     'settings.deviceLaptop': 'Computer-view tooltip',
     'settings.cardRemove': '“Remove project” tooltip',
-    'settings.showcase': 'Hero showcase image',
+    'settings.showcase': 'Custom hero showcase image',
 
     'hero.eyebrow': 'Pixelio — Creative Studio',
     'hero.title': 'We turn your idea into a <span class="grad">professional digital presence</span>',
@@ -109,7 +112,7 @@ const I18N = {
     'work.kicker': 'Portfolio',
     'work.title': 'Websites we <span class="grad">built</span>',
     'work.sub': 'Every project below is shown live inside a real device — tap any screen to open the site.',
-    'work.demo': 'Demo',
+    'showcase.empty': 'Your published websites will appear here.',
     'form.placeholder': 'Paste a website link — e.g. https://yoursite.com',
     'form.btn': 'Analyze & Add',
     'form.btnLoading': 'Analyzing…',
@@ -148,6 +151,7 @@ const I18N = {
 
     'toast.duplicate': 'That link is already in the portfolio.',
     'toast.added': 'published to the portfolio',
+    'toast.addedWithoutMeta': 'saved. You can add its details later.',
     'toast.removed': 'Project removed.',
     'toast.invalid': 'Please enter a valid link, e.g. https://example.com',
     'toast.failed': 'Could not read that website — check the link and try again.',
@@ -202,7 +206,7 @@ const I18N = {
     'settings.devicePhone': 'تلميح عرض الهاتف',
     'settings.deviceLaptop': 'تلميح عرض الكمبيوتر',
     'settings.cardRemove': 'تلميح "حذف المشروع"',
-    'settings.showcase': 'صورة عرض الواجهة الرئيسية',
+    'settings.showcase': 'صورة مخصصة لعرض الواجهة الرئيسية',
 
     'hero.eyebrow': 'Pixelio — استوديو إبداعي',
     'hero.title': 'حوّل فكرتك إلى <span class="grad">حضور رقمي احترافي</span>',
@@ -247,7 +251,7 @@ const I18N = {
     'work.kicker': 'أعمالنا',
     'work.title': 'مواقع <span class="grad">أنشأناها</span>',
     'work.sub': 'كل مشروع معروض داخل جهاز حقيقي — اضغط على أي شاشة لفتح الموقع.',
-    'work.demo': 'نموذج',
+    'showcase.empty': 'ستظهر مواقعك المنشورة هنا.',
     'form.placeholder': 'الصق رابط موقع — مثال: https://yoursite.com',
     'form.btn': 'تحليل وإضافة',
     'form.btnLoading': 'جارٍ التحليل…',
@@ -286,6 +290,7 @@ const I18N = {
 
     'toast.duplicate': 'هذا الرابط موجود بالفعل في المعرض.',
     'toast.added': 'تمت إضافته إلى المعرض',
+    'toast.addedWithoutMeta': 'تم حفظه، ويمكنك إضافة تفاصيله لاحقاً.',
     'toast.removed': 'تم حذف المشروع.',
     'toast.invalid': 'من فضلك أدخل رابطاً صحيحاً، مثال: https://example.com',
     'toast.failed': 'تعذرت قراءة هذا الموقع — تحقق من الرابط وحاول مجدداً.',
@@ -358,10 +363,13 @@ function effectiveContacts() {
 }
 
 function effectiveShowcase() {
-  return DEFAULT_SHOWCASE.map((src, i) => {
-    const o = ov('site', `showcase.${i}`);
-    return o || src;
-  });
+  // An owner may pin custom images in the settings. Otherwise the showcase is
+  // populated only from real portfolio entries that have a preview image.
+  const custom = Array.from({ length: SHOWCASE_SLOTS }, (_, i) =>
+    ov('site', `showcase.${i}`) || DEFAULT_SHOWCASE[i],
+  ).filter(Boolean);
+  if (custom.length) return custom;
+  return projects.filter((project) => project && project.image).slice(0, 4).map((project) => project.image);
 }
 
 async function fetchContent() {
@@ -749,17 +757,28 @@ let showTimer = null;
 function buildShowcase() {
   const stack = $('#hero-stack');
   const dots = $('#hero-dots');
-  if (!stack) return;
+  if (!stack || !dots) return;
   const shots = effectiveShowcase();
+  clearInterval(showTimer);
+  showIndex = 0;
+
+  if (!shots.length) {
+    stack.innerHTML = `<div class="showcase-empty"><span aria-hidden="true">✦</span><p>${esc(t('showcase.empty'))}</p></div>`;
+    dots.innerHTML = '';
+    dots.hidden = true;
+    return;
+  }
+
   stack.innerHTML = shots
     .map((src, i) => `<div class="shot${i === 0 ? ' active' : ''}"><img src="${esc(src)}" alt="" loading="${i === 0 ? 'eager' : 'lazy'}"></div>`)
     .join('');
+  dots.hidden = false;
   dots.innerHTML = shots
     .map((_, i) => `<button type="button" role="tab" class="${i === 0 ? 'active' : ''}" aria-label="Screen ${i + 1}"></button>`)
     .join('');
 
   dots.querySelectorAll('button').forEach((b, i) => b.addEventListener('click', () => goShot(i, true)));
-  startShowcase();
+  if (shots.length > 1) startShowcase();
 }
 
 function goShot(i, manual = false) {
@@ -806,7 +825,6 @@ function cardTemplate(p, index) {
         <span class="notch" aria-hidden="true"></span>
         <span class="cam" aria-hidden="true"></span>
         <a class="device-screen" href="${esc(p.url)}" target="_blank" rel="noopener" aria-label="${esc(projTitle(p))}">
-          ${p.demo ? `<span class="card-badge" data-i18n="work.demo">${esc(t('work.demo'))}</span>` : ''}
           <div class="screen-stack">${media}</div>
           <span class="screen-shine" aria-hidden="true"></span>
         </a>
@@ -831,6 +849,7 @@ function renderGrid() {
   if (!grid) return;
   grid.innerHTML = projects.map(cardTemplate).join('');
   if (empty) empty.hidden = projects.length > 0;
+  buildShowcase();
   observeReveals();
   updateStatCount(true);
 }
@@ -938,6 +957,12 @@ function shakeInput() {
   wrap.classList.add('shake');
 }
 
+function basicProjectData(url) {
+  const parsed = new URL(url);
+  const host = parsed.hostname.replace(/^www\./, '');
+  return { url: parsed.toString(), host, title: host, description: '', image: null, favicon: null };
+}
+
 async function analyzeAndAdd(url) {
   const btn = $('#add-btn');
   const spinner = $('#add-spinner');
@@ -948,7 +973,17 @@ async function analyzeAndAdd(url) {
   label.textContent = t('form.btnLoading');
 
   try {
-    const data = await analyzeSite(url);
+    // Metadata is an enhancement, not a requirement for saving a website. A
+    // valid link is always kept even when its host blocks metadata requests.
+    let data;
+    let metadataUnavailable = false;
+    try {
+      data = await analyzeSite(url);
+    } catch {
+      data = basicProjectData(url);
+      metadataUnavailable = true;
+    }
+
     const res = await fetch('/api/projects', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -968,9 +1003,10 @@ async function analyzeAndAdd(url) {
     $('#url-input').value = '';
     const card = document.querySelector(`.work-card[data-id="${out.project.id}"]`);
     if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    toast(`${out.project.title} — ${t('toast.added')}`, 'success');
+    const suffix = metadataUnavailable ? t('toast.addedWithoutMeta') : t('toast.added');
+    toast(`${out.project.title} — ${suffix}`, 'success');
   } catch {
-    toast(t('toast.failed'), 'error');
+    toast(t('toast.savefail'), 'error');
     shakeInput();
   } finally {
     btn.disabled = false;
@@ -1176,7 +1212,7 @@ function syncAfterContentChange(path) {
   if (path.startsWith('services.')) refreshServiceOrderLinks();
   if (path.startsWith('showcase.')) buildShowcase();
   applyAttributeBindings();
-  if (path === 'card.remove' || path === 'work.demo' || path === 'card.visit') renderGrid();
+  if (path === 'card.remove' || path === 'card.visit') renderGrid();
 }
 
 function refreshEditables() {
