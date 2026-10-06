@@ -20,7 +20,7 @@ node server.js          # → http://localhost:3000   (PORT env to change)
 | Section | What happens |
 |---|---|
 | **Intro splash** | A short animated opener: particles converge, the letters **P I X E L I O** assemble in 3D with a light sweep, `STUDIO` spaces out, a gradient line draws, then a bar-wipe reveals the site. Skippable (button or `Esc`), plays once per browser session, disabled under `prefers-reduced-motion`. |
-| **Hero** | Headline, stats and a **floating device** that shows real site screens. |
+| **Hero** | Headline, stats and a **floating device** that shows your published project screens (or an empty state until the first project is added). |
 | **The Flood (الطوفان)** | Animated wave layers + rising bubbles behind 12 service cards (graphic design + website design), each with an **Order service** WhatsApp button that surge up in a staggered cascade, followed by three counter-scrolling streams of keywords. |
 | **Our Work** | Every project is displayed **inside a floating device** — a phone on mobile, a laptop on desktop. Tap a screen to open the live site. |
 | **About / Contact** | Studio blurb, skill tags, and both phone lines with call / WhatsApp / copy actions, plus a floating WhatsApp button. |
@@ -103,23 +103,24 @@ Security details: password compared with `crypto.timingSafeEqual`, HMAC-signed
 
 **Adding a project:** paste a link → the browser reads the page's public metadata
 (`og:title`, description, `og:image`, favicon) directly, through CORS relays, or via
-`/api/analyze` as a fallback → the card is created and saved server-side in
-`data/projects.json` (git-ignored). `seed-projects.json` holds the four demo cards
-that ship with the site; delete them from the UI once real work is published.
+`/api/analyze` as a fallback. If a site blocks metadata requests, its valid link is
+still added with its hostname and can be edited afterwards. Every added site is saved
+server-side in `data/projects.json` (git-ignored); queued, atomic writes protect the
+portfolio from partial writes or server restarts. The site ships with no demo cards or
+demo screens. Existing legacy demo cards are removed automatically on startup, while
+owner-added projects are retained.
 
 ## 📁 Structure
 
 ```
 server.js              Static server + auth + projects API + content API + /api/analyze
-seed-projects.json     Demo portfolio entries (first-run seed)
-data/projects.json     Live portfolio, written by the server (git-ignored)
+data/projects.json     Live portfolio, written atomically by the server (git-ignored)
 data/content.json      Every owner-edited word/number/image link (git-ignored)
 public/
   index.html           The page
   css/style.css        Light theme tokens, glass cubes, device frames, waves, intro, edit-mode styling
   js/parse.js          Shared metadata parser (browser + Node)
   js/app.js            i18n, intro, device modes, portfolio, owner session, inline content editing
-  img/screen-*.jpg     Showcase screens
 ```
 
 ## 📞 Contact

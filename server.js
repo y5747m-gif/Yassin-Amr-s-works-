@@ -33,7 +33,6 @@ const PORT = Number(process.env.PORT) || 3000;
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const DATA_DIR = path.join(__dirname, 'data');
 const PROJECTS_FILE = path.join(DATA_DIR, 'projects.json');
-const SEED_FILE = path.join(__dirname, 'seed-projects.json');
 const CONTENT_FILE = path.join(DATA_DIR, 'content.json');
 const FETCH_TIMEOUT_MS = 20000;
 const MAX_BODY_CHARS = 2_000_000;
@@ -187,33 +186,49 @@ function throttleReset(ip) {
 
 let projects = [];
 let writeQueue = Promise.resolve();
+let removedLegacyDemoProjects = false;
+
+// These IDs were used only by the old bundled trial portfolio.  Filtering them
+// during startup also cleans installations that were first run before this
+// change, while leaving every owner-added project untouched.
+const LEGACY_DEMO_IDS = new Set(['demo-1', 'demo-2', 'demo-3', 'demo-4']);
+
+function isLegacyDemoProject(project) {
+  return Boolean(project && (project.demo === true || LEGACY_DEMO_IDS.has(project.id)));
+}
 
 function loadProjects() {
   try {
-    if (fs.existsSync(PROJECTS_FILE)) {
-      const parsed = JSON.parse(fs.readFileSync(PROJECTS_FILE, 'utf8'));
-      if (Array.isArray(parsed)) return parsed;
-    }
+    if (!fs.existsSync(PROJECTS_FILE)) return [];
+    const parsed = JSON.parse(fs.readFileSync(PROJECTS_FILE, 'utf8'));
+    if (!Array.isArray(parsed)) return [];
+
+    const savedProjects = parsed.filter((project) => !isLegacyDemoProject(project));
+    removedLegacyDemoProjects = savedProjects.length !== parsed.length;
+    return savedProjects;
   } catch (err) {
     console.error('Could not read projects.json:', err.message);
+    return [];
   }
+}
+
+async function atomicWriteJson(file, value) {
+  await fsp.mkdir(path.dirname(file), { recursive: true });
+  const tempFile = `${file}.${process.pid}.${crypto.randomBytes(6).toString('hex')}.tmp`;
   try {
-    if (fs.existsSync(SEED_FILE)) {
-      const seed = JSON.parse(fs.readFileSync(SEED_FILE, 'utf8'));
-      if (Array.isArray(seed)) return seed;
-    }
+    await fsp.writeFile(tempFile, JSON.stringify(value, null, 2), 'utf8');
+    await fsp.rename(tempFile, file);
   } catch (err) {
-    console.error('Could not read seed-projects.json:', err.message);
+    await fsp.unlink(tempFile).catch(() => {});
+    throw err;
   }
-  return [];
 }
 
 function persistProjects() {
+  // Queue writes and replace the file atomically, so an interrupted write can
+  // never leave the portfolio empty or partially written after a restart.
   writeQueue = writeQueue
-    .then(async () => {
-      await fsp.mkdir(DATA_DIR, { recursive: true });
-      await fsp.writeFile(PROJECTS_FILE, JSON.stringify(projects, null, 2), 'utf8');
-    })
+    .then(() => atomicWriteJson(PROJECTS_FILE, projects))
     .catch((err) => console.error('Could not save projects:', err.message));
   return writeQueue;
 }
@@ -541,7 +556,6 @@ async function handleUpdateProject(req, res, url) {
     id: old.id,
     titleAr: sanitizeText(body.titleAr, 160),
     descriptionAr: sanitizeText(body.descriptionAr, 420),
-    demo: Boolean(body.demo),
     addedAt: old.addedAt || clean.addedAt,
     updatedAt: new Date().toISOString(),
   };
@@ -588,6 +602,8 @@ function serveStatic(req, res, pathname) {
 
 projects = loadProjects();
 content = loadContent();
+// Persist the one-time removal of the former bundled demo cards immediately.
+if (removedLegacyDemoProjects) persistProjects();
 
 const server = http.createServer(async (req, res) => {
   let url;
