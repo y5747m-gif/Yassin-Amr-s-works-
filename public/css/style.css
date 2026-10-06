@@ -128,6 +128,9 @@ html.intro-skip .intro { display: none; }
 .intro-logo {
   position: relative;
   display: inline-flex;
+  /* Keep the Latin brand name in its canonical order when Arabic/RTL is active. */
+  direction: ltr;
+  unicode-bidi: isolate;
   align-items: baseline;
   font-family: 'Space Grotesk', var(--font-en);
   font-weight: 700;
