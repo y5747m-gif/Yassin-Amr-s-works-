@@ -565,6 +565,26 @@ function serveStatic(req, res, pathname) {
   });
 }
 
+/* --------------------------- rewrite repair (Vercel) -----------------------
+ * A Vercel rewrite hands the serverless function its *destination* path, not
+ * the one the visitor asked for: `{ "source": "/api/(.*)", "destination":
+ * "/api/index.js?__path=/api/$1" }` reaches this handler as
+ * `/api/index.js?__path=/api/session`. The real path travels in the `__path`
+ * query parameter, so it is rebuilt here before routing. When the server runs
+ * directly (`node server.js`) there is no rewrite and no `__path`, so this is
+ * a no-op — the same routes keep working in both environments.
+ */
+
+const REWRITE_DESTINATIONS = new Set(['/api/index.js', '/api/index']);
+const REWRITTEN_PATH_RE = /^\/(?:api|healthz)(?:\/|$)/;
+
+function resolveRequestPath(url, pathname) {
+  const rewritten = url.searchParams.get('__path');
+  if (!rewritten || !REWRITE_DESTINATIONS.has(pathname)) return pathname;
+  if (!REWRITTEN_PATH_RE.test(rewritten)) return pathname;
+  return rewritten.replace(/\/+$/, '') || '/';
+}
+
 /* ----------------------------- request handler ----------------------------- */
 
 async function requestHandler(req, res) {
@@ -577,7 +597,7 @@ async function requestHandler(req, res) {
   }
 
   try {
-    const p = url.pathname.replace(/\/+$/, '') || '/';
+    const p = resolveRequestPath(url, url.pathname.replace(/\/+$/, '') || '/');
 
     if (p === '/api/analyze') {
       if (req.method !== 'GET') { res.writeHead(405); return res.end(); }

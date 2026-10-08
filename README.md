@@ -101,6 +101,24 @@ Security details: password compared with `crypto.timingSafeEqual`, HMAC-signed
 | `DELETE` | `/api/content?scope=…&path=…` | owner | revert one override to its built-in default |
 | `GET` | `/healthz` | — | uptime probe |
 
+### ☁️ How the API reaches the function on Vercel
+
+Vercel keeps `public/` as static files and turns `api/index.js` into the single
+serverless entry point, with `vercel.json` rewriting `/api/*` (and `/healthz`)
+to it. A Vercel rewrite hands the function its **destination** path — not the one
+the browser asked for — so the rewrite carries the real path in a `__path` query
+parameter:
+
+```json
+{ "source": "/api/(.*)", "destination": "/api/index.js?__path=/api/$1" }
+```
+
+`server.js` rebuilds the request path from `__path` before routing, and the
+caller's own query string travels alongside it (Vercel merges the two). Running
+the server directly (`node server.js`) has no rewrite, no `__path`, and is
+unaffected. `test/vercel-routing.test.js` locks this behaviour in with regression
+tests (`npm test`).
+
 **Adding a project:** paste a link → the browser reads the page's public metadata
 (`og:title`, description, `og:image`, favicon) directly, through CORS relays, or via
 `/api/analyze` as a fallback. If a site blocks metadata requests, its valid link is
