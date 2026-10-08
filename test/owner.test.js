@@ -5,6 +5,10 @@ const fs = require('node:fs');
 const { JSDOM } = require('jsdom');
 const html = fs.readFileSync('public/index.html', 'utf8');
 const script = fs.readFileSync('public/js/app.js', 'utf8');
+// The page is rendered by the view scripts (public/js/views/*.js), which app.js
+// mounts on start-up; they have no load-time dependencies on each other.
+const views = fs.readdirSync('public/js/views').filter(f => f.endsWith('.js')).sort()
+  .map(f => fs.readFileSync(`public/js/views/${f}`, 'utf8'));
 const reply = (data, status = 200) => ({ ok: status < 400, status, json: async () => data });
 const tick = () => new Promise(resolve => setImmediate(resolve));
 
@@ -20,6 +24,7 @@ async function boot(t, fetch, blockedStorage = false) {
   w.Element.prototype.scrollIntoView = () => {};
   w.fetch = fetch;
   if (blockedStorage) Object.defineProperty(w, 'localStorage', { get() { throw new w.DOMException('Storage blocked', 'SecurityError'); } });
+  for (const view of views) w.eval(view);
   w.eval(script);
   await tick();
   assert.deepEqual(errors, []);

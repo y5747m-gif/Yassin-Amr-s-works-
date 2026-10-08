@@ -128,17 +128,49 @@ portfolio from partial writes or server restarts. The site ships with no demo ca
 demo screens. Existing legacy demo cards are removed automatically on startup, while
 owner-added projects are retained.
 
+## 🧩 How the page is built
+
+The whole page is rendered by JavaScript. There is no framework and no build step: the
+browser runs the same plain scripts that are in the repository.
+
+- **`index.html` is a shell.** It holds the `<head>` (title, description, Open Graph tags,
+  favicon, fonts and stylesheet), a `<noscript>` message and an empty `<div id="app">`.
+- **`js/views/*.js` build the markup.** `shell.js`, `sections.js` and `dialogs.js` are
+  classic scripts that fill `window.PixelioViews` with functions which return HTML strings
+  from the current language and phone numbers. They cover the intro, background, navigation,
+  hero, marquee, services, portfolio with the owner panel, about, contact and footer,
+  the WhatsApp button and the login and project-editor dialogs.
+- **`js/app.js` brings the page to life.** On start-up `mountSite()` renders the views into
+  `#app`, then the existing code runs unchanged: translations, the owner session and inline
+  editing, and the lists that come from the API (service cards, portfolio, tags, contact
+  cards, scrolling words, the device showcase).
+- **Where to make changes.** Layout and markup live in the views. Wording lives in the
+  `I18N` dictionary in `app.js`, and owners can override many of these words from the
+  site itself. Styling stays in `css/style.css`. The views must load before `app.js`, as
+  set in `index.html`.
+- **SEO and link previews.** Visible content is produced by JavaScript. Search engines
+  that run JavaScript (Google does) index it, but crawlers that do not run it see only
+  the head metadata and the `<noscript>` message. Link previews read the Open Graph tags
+  in the head, which are still static HTML.
+
 ## 📁 Structure
 
 ```
-server.js              Static server + auth + projects API + content API + /api/analyze
-data/projects.json     Live portfolio, written atomically by the server (git-ignored)
-data/content.json      Every owner-edited word/number/image link (git-ignored)
+server.js                 Static server + auth + projects API + content API + /api/analyze
+data/projects.json        Live portfolio, written atomically by the server (git-ignored)
+data/content.json         Every owner-edited word/number/image link (git-ignored)
 public/
-  index.html           The page
-  css/style.css        Light theme tokens, glass cubes, device frames, waves, intro, edit-mode styling
-  js/parse.js          Shared metadata parser (browser + Node)
-  js/app.js            i18n, intro, device modes, portfolio, owner session, inline content editing
+  index.html              Shell: <head> metadata, empty #app mount point, script tags
+  css/style.css           Light theme tokens, glass cubes, device frames, waves, intro, edit-mode styling
+  js/views/shell.js       Page frame: intro, background, navigation, WhatsApp button, shared helpers
+  js/views/sections.js    Hero, marquee, services, portfolio + owner panel, about, contact + footer
+  js/views/dialogs.js     Owner sign-in and project-editor dialogs
+  js/parse.js             Shared metadata parser (browser + Node)
+  js/app.js               Page mount, i18n, intro behaviour, device modes, portfolio, owner session, inline content editing
+test/
+  owner.test.js           Owner flows, run against a JSDOM copy of the page
+  views.test.js           Views: element ids, escaping, language, layout the stylesheet relies on
+  vercel-routing.test.js  API routing through the Vercel rewrite
 ```
 
 ## 📞 Contact
