@@ -304,11 +304,16 @@ const I18N = {
 const LANG_KEY = 'twe-lang';
 const DEVICE_KEY = 'twe-device';
 
-let lang = localStorage.getItem(LANG_KEY) ||
+function readPreference(key) {
+  try { return localStorage.getItem(key); } catch { return null; }
+}
+
+let lang = readPreference(LANG_KEY) ||
   ((navigator.language || 'en').toLowerCase().startsWith('ar') ? 'ar' : 'en');
-let deviceMode = localStorage.getItem(DEVICE_KEY) || detectDevice();
+let deviceMode = readPreference(DEVICE_KEY) || detectDevice();
 let projects = [];
 let isOwner = false;
+let sessionRevision = 0;
 
 /* ---------------------------- editable content ------------------------------
  * CONTENT holds every override the owner has saved on the server, layered on
@@ -908,7 +913,6 @@ async function loadProjects() {
     const data = await res.json();
     if (data && data.ok) {
       projects = Array.isArray(data.projects) ? data.projects : [];
-      setOwner(Boolean(data.owner), { quiet: true });
     }
   } catch {
     projects = [];
@@ -1358,6 +1362,7 @@ function buildOwnerSettings() {
 
 function setOwner(value, { quiet = false } = {}) {
   const changed = isOwner !== value;
+  if (changed) sessionRevision++;
   isOwner = value;
   $('#owner-panel').hidden = !value;
   $('#owner-dot').hidden = !value;
@@ -1369,11 +1374,16 @@ function setOwner(value, { quiet = false } = {}) {
 }
 
 async function checkSession() {
+  const revision = sessionRevision;
   try {
     const res = await fetch('/api/session', { cache: 'no-store' });
     const data = await res.json();
-    setOwner(Boolean(data && data.owner), { quiet: true });
-  } catch { setOwner(false, { quiet: true }); }
+    // Ignore a check started before a newer login/logout action.
+    if (revision !== sessionRevision || !res.ok || !data.ok) return;
+    setOwner(Boolean(data.owner));
+  } catch {
+    // A temporary network failure must not discard an active owner session.
+  }
 }
 
 function openModal() {
@@ -1392,6 +1402,8 @@ function closeModal() {
 
 async function doLogin(e) {
   e.preventDefault();
+  if ($('#login-submit').disabled) return;
+  sessionRevision++;
   const user = $('#login-user').value.trim();
   const pass = $('#login-pass').value;
   const err = $('#login-error');
@@ -1422,8 +1434,10 @@ async function doLogin(e) {
     }
     if (res.status === 429) {
       err.textContent = t('owner.throttled').replace('{s}', data.retryAfter || 60);
-    } else {
+    } else if (res.status === 401) {
       err.textContent = t('owner.bad');
+    } else {
+      err.textContent = t('owner.netfail');
     }
     err.hidden = false;
     err.style.animation = 'none';
@@ -1440,7 +1454,14 @@ async function doLogin(e) {
 }
 
 async function doLogout() {
-  try { await fetch('/api/logout', { method: 'POST' }); } catch {}
+  sessionRevision++;
+  try {
+    const res = await fetch('/api/logout', { method: 'POST' });
+    if (!res.ok) throw new Error('logout-failed');
+  } catch {
+    toast(t('owner.netfail'), 'error');
+    return;
+  }
   setOwner(false);
   renderGrid();
   toast(t('owner.bye'), 'success');
@@ -1642,7 +1663,7 @@ function bindEvents() {
   addEventListener('resize', () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
-      if (localStorage.getItem(DEVICE_KEY)) return; // user chose explicitly
+      if (readPreference(DEVICE_KEY)) return; // user chose explicitly
       applyDeviceMode(detectDevice(), { remember: false });
     }, 220);
   });
@@ -1876,5 +1897,6 @@ document.addEventListener('DOMContentLoaded', () => {
   fetchContent().then((hasOverrides) => {
     if (hasOverrides) applyLang(lang);
   });
+  checkSession();
   loadProjects();
 });
