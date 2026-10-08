@@ -382,8 +382,14 @@ async function fetchContent() {
         ar: data.content.ar || {},
         site: data.content.site || {},
       };
+      return (
+        Object.keys(CONTENT.en).length > 0 ||
+        Object.keys(CONTENT.ar).length > 0 ||
+        Object.keys(CONTENT.site).length > 0
+      );
     }
   } catch { /* fall back to defaults */ }
+  return false;
 }
 
 async function saveContent(scope, path, value) {
@@ -392,6 +398,11 @@ async function saveContent(scope, path, value) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ scope, path, value }),
   });
+  if (res.status === 401) {
+    setOwner(false);
+    toast(t('toast.needOwner'), 'error');
+    throw new Error('unauthorized');
+  }
   if (!res.ok) throw new Error('save-failed');
   const data = await res.json().catch(() => ({}));
   if (!data.ok) throw new Error('save-failed');
@@ -404,6 +415,11 @@ async function resetContent(scope, path) {
   const res = await fetch(`/api/content?scope=${encodeURIComponent(scope)}&path=${encodeURIComponent(path)}`, {
     method: 'DELETE',
   });
+  if (res.status === 401) {
+    setOwner(false);
+    toast(t('toast.needOwner'), 'error');
+    throw new Error('unauthorized');
+  }
   if (!res.ok) throw new Error('reset-failed');
   if (CONTENT[scope]) delete CONTENT[scope][path];
 }
@@ -416,6 +432,10 @@ function detectDevice() {
   const fine = window.matchMedia('(pointer: fine)').matches;
   const touch = navigator.maxTouchPoints > 1;
   return wide && (fine || !touch) ? 'laptop' : 'phone';
+}
+
+function isLowEndDevice() {
+  return document.documentElement.classList.contains('perf-lite');
 }
 
 function esc(s) {
@@ -452,12 +472,14 @@ function initIntro() {
   const started = performance.now();
   const TIMELINE_MS = 5250; // CSS timeline: letters → word → wipe → fade out
   let closed = false;
+  let stopParticles = null;
 
   /* `natural` = the CSS outro already played; anything earlier is a skip and
      gets its own quick fade so the overlay never flashes back in. */
   const close = (natural = false) => {
     if (closed) return;
     closed = true;
+    if (stopParticles) { stopParticles(); stopParticles = null; }
     try { sessionStorage.setItem('twe-intro-seen', '1'); } catch {}
     if (!natural && performance.now() - started < TIMELINE_MS - 400) {
       intro.classList.add('done');
@@ -470,81 +492,97 @@ function initIntro() {
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(false); }, { once: true });
   setTimeout(() => close(true), reduced ? 100 : TIMELINE_MS);
 
-  if (!reduced) introParticles();
+  if (!reduced) stopParticles = introParticles();
 }
 
 function introParticles() {
   const canvas = $('#intro-particles');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  let w, h, raf;
+  if (!canvas) return null;
+  const ctx = canvas.getContext('2d', { alpha: true });
+  if (!ctx) return null;
+  const lite = isLowEndDevice();
+  const dpr = lite ? 1 : Math.min(window.devicePixelRatio || 1, 1.5);
+  let w, h, raf = 0, stopped = false;
   const dots = [];
 
   const resize = () => {
-    w = canvas.width = innerWidth * dpr;
-    h = canvas.height = innerHeight * dpr;
+    w = canvas.width = Math.round(innerWidth * dpr);
+    h = canvas.height = Math.round(innerHeight * dpr);
     canvas.style.width = innerWidth + 'px';
     canvas.style.height = innerHeight + 'px';
   };
   resize();
-  addEventListener('resize', resize);
+  addEventListener('resize', resize, { passive: true });
 
   const COLORS = ['#168cff', '#6c3bff', '#e83baf'];
-  const count = innerWidth < 600 ? 46 : 90;
+  const count = (lite || innerWidth < 600) ? 36 : 90;
+  const maxDist2 = ((lite ? 110 : 130) * dpr) ** 2;
+  const twoPi = Math.PI * 2;
+
   for (let i = 0; i < count; i++) {
     dots.push({
       x: Math.random() * w,
       y: Math.random() * h,
-      r: (Math.random() * 1.8 + .5) * dpr,
+      r: (Math.random() * 1.8 + .7) * dpr,
       vx: (Math.random() - .5) * .55 * dpr,
       vy: (Math.random() - .5) * .55 * dpr,
       c: COLORS[(Math.random() * COLORS.length) | 0],
-      a: Math.random() * .6 + .25,
+      a: Math.random() * .55 + .3,
     });
   }
 
-  const cx = () => w / 2, cy = () => h / 2;
-
   const draw = () => {
+    if (stopped) return;
     ctx.clearRect(0, 0, w, h);
-    for (const d of dots) {
+    const centerX = w * 0.5;
+    const centerY = h * 0.5;
+
+    for (let i = 0; i < dots.length; i++) {
+      const d = dots[i];
       // gentle pull toward the centre — the logo "attracts" the particles
-      d.vx += (cx() - d.x) * 0.000035;
-      d.vy += (cy() - d.y) * 0.000035;
+      d.vx += (centerX - d.x) * 0.000035;
+      d.vy += (centerY - d.y) * 0.000035;
       d.x += d.vx; d.y += d.vy;
       if (d.x < 0 || d.x > w) d.vx *= -1;
       if (d.y < 0 || d.y > h) d.vy *= -1;
 
-      ctx.globalAlpha = d.a * .8;
+      ctx.globalAlpha = d.a * .82;
       ctx.fillStyle = d.c;
-      ctx.shadowBlur = 12 * dpr;
-      ctx.shadowColor = d.c;
       ctx.beginPath();
-      ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+      ctx.arc(d.x, d.y, d.r, 0, twoPi);
       ctx.fill();
     }
-    ctx.shadowBlur = 0;
-    // link nearby particles
-    ctx.globalAlpha = .16;
+
+    // Batch all connecting lines into a single draw call (1 stroke vs 300+)
+    ctx.globalAlpha = .15;
     ctx.strokeStyle = '#8fb6ff';
-    ctx.lineWidth = dpr * .6;
+    ctx.lineWidth = dpr * .65;
+    ctx.beginPath();
     for (let i = 0; i < dots.length; i++) {
+      const di = dots[i];
       for (let j = i + 1; j < dots.length; j++) {
-        const dx = dots[i].x - dots[j].x, dy = dots[i].y - dots[j].y;
-        const dist2 = dx * dx + dy * dy;
-        if (dist2 < (130 * dpr) ** 2) {
-          ctx.beginPath();
-          ctx.moveTo(dots[i].x, dots[i].y);
-          ctx.lineTo(dots[j].x, dots[j].y);
-          ctx.stroke();
+        const dj = dots[j];
+        const dx = di.x - dj.x, dy = di.y - dj.y;
+        if (dx * dx + dy * dy < maxDist2) {
+          ctx.moveTo(di.x, di.y);
+          ctx.lineTo(dj.x, dj.y);
         }
       }
     }
+    ctx.stroke();
+
     raf = requestAnimationFrame(draw);
   };
   draw();
-  setTimeout(() => cancelAnimationFrame(raf), 7000);
+
+  const stop = () => {
+    if (stopped) return;
+    stopped = true;
+    cancelAnimationFrame(raf);
+    removeEventListener('resize', resize);
+  };
+  setTimeout(stop, 6000);
+  return stop;
 }
 
 /* ======================================================================
@@ -721,8 +759,9 @@ function refreshServiceOrderLinks() {
 function buildBubbles() {
   const wrap = $('#bubbles');
   if (!wrap) return;
+  const count = (isLowEndDevice() || innerWidth < 640) ? 7 : 14;
   let html = '';
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < count; i++) {
     const size = 6 + Math.random() * 26;
     html += `<span class="bubble" style="
       inset-inline-start:${(Math.random() * 100).toFixed(1)}%;
@@ -753,24 +792,30 @@ function applyDeviceMode(mode, { remember = true } = {}) {
 
 let showIndex = 0;
 let showTimer = null;
+let lastShowcaseKey = null;
 
 function buildShowcase() {
   const stack = $('#hero-stack');
   const dots = $('#hero-dots');
   if (!stack || !dots) return;
   const shots = effectiveShowcase();
+  const emptyText = t('showcase.empty');
+  const nextKey = shots.length ? shots.join('|') : `empty:${emptyText}`;
+  if (nextKey === lastShowcaseKey) return;
+  lastShowcaseKey = nextKey;
+
   clearInterval(showTimer);
   showIndex = 0;
 
   if (!shots.length) {
-    stack.innerHTML = `<div class="showcase-empty"><span aria-hidden="true">✦</span><p>${esc(t('showcase.empty'))}</p></div>`;
+    stack.innerHTML = `<div class="showcase-empty"><span aria-hidden="true">✦</span><p>${esc(emptyText)}</p></div>`;
     dots.innerHTML = '';
     dots.hidden = true;
     return;
   }
 
   stack.innerHTML = shots
-    .map((src, i) => `<div class="shot${i === 0 ? ' active' : ''}"><img src="${esc(src)}" alt="" loading="${i === 0 ? 'eager' : 'lazy'}"></div>`)
+    .map((src, i) => `<div class="shot${i === 0 ? ' active' : ''}"><img src="${esc(src)}" alt="" decoding="async" loading="${i === 0 ? 'eager' : 'lazy'}"></div>`)
     .join('');
   dots.hidden = false;
   dots.innerHTML = shots
@@ -782,6 +827,9 @@ function buildShowcase() {
 }
 
 function goShot(i, manual = false) {
+  if (!manual && document.hidden) return;
+  const hero = document.querySelector('.hero');
+  if (!manual && hero && hero.classList.contains('offscreen')) return;
   const shots = $$('#hero-stack .shot');
   const dots = $$('#hero-dots button');
   if (!shots.length) return;
@@ -810,11 +858,11 @@ function projDesc(p) {
 function cardTemplate(p, index) {
   const initial = esc(((p.host || p.title || '•')[0] || '•').toUpperCase());
   const media = p.image
-    ? `<div class="shot"><img src="${esc(p.image)}" alt="${esc(projTitle(p))}" loading="lazy"
+    ? `<div class="shot"><img src="${esc(p.image)}" alt="${esc(projTitle(p))}" decoding="async" loading="lazy"
          onerror="this.parentElement.innerHTML='<div class=&quot;shot-fallback&quot;>${initial}</div>'"></div>`
     : `<div class="shot"><div class="shot-fallback">${initial}</div></div>`;
 
-  const fav = p.favicon ? `<img src="${esc(p.favicon)}" alt="" loading="lazy" onerror="this.remove()">` : '';
+  const fav = p.favicon ? `<img src="${esc(p.favicon)}" alt="" decoding="async" loading="lazy" onerror="this.remove()">` : '';
 
   return `
   <article class="work-card" data-id="${esc(p.id)}" style="--rd:${Math.min(index * 80, 480)}ms">
@@ -885,14 +933,7 @@ function updateStatCount(animate = true) {
 
 /* ------------------------------ analyze & add ------------------------------ */
 
-const FETCH_TIMEOUT_MS = 14000;
-
-const FETCH_SOURCES = [
-  (url) => ({ type: 'html', href: url }),
-  (url) => ({ type: 'html', href: 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url) }),
-  (url) => ({ type: 'html', href: 'https://corsproxy.io/?url=' + encodeURIComponent(url) }),
-  (url) => ({ type: 'json', href: '/api/analyze?url=' + encodeURIComponent(url) }),
-];
+const METADATA_TIMEOUT_MS = 5000;
 
 function normalizeUrl(input) {
   let value = String(input || '').trim();
@@ -900,53 +941,10 @@ function normalizeUrl(input) {
   if (!/^https?:\/\//i.test(value)) value = 'https://' + value;
   try {
     const u = new URL(value);
-    if (!u.hostname.includes('.')) return null;
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+    if (!u.hostname || !u.hostname.includes('.')) return null;
     return u.toString();
   } catch { return null; }
-}
-
-async function fetchText(href) {
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
-  try {
-    const resp = await fetch(href, { signal: ctrl.signal, redirect: 'follow', cache: 'no-store' });
-    if (!resp.ok) return null;
-    const text = await resp.text();
-    if (!text || text.length < 20) return null;
-    return { text, finalUrl: resp.url || href };
-  } catch { return null; } finally { clearTimeout(timer); }
-}
-
-function looksLikeHtml(text) {
-  const head = text.slice(0, 6000).toLowerCase();
-  return head.includes('<html') || head.includes('<head') || head.includes('<meta') ||
-         head.includes('<title') || head.includes('<body');
-}
-
-async function analyzeSite(url) {
-  for (const make of FETCH_SOURCES) {
-    const src = make(url);
-    try {
-      if (src.type === 'json') {
-        const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
-        const resp = await fetch(src.href, { signal: ctrl.signal });
-        clearTimeout(timer);
-        if (!resp.ok) continue;
-        const data = await resp.json();
-        if (data && data.ok && (data.title || data.description)) {
-          return { title: data.title, description: data.description, image: data.image || null,
-                   favicon: data.favicon || null, host: data.host || '', url: data.url || url };
-        }
-        continue;
-      }
-      const res = await fetchText(src.href);
-      if (!res || !looksLikeHtml(res.text)) continue;
-      const meta = parseSiteMeta(res.text, res.finalUrl || url);
-      if (meta.title || meta.description) return { ...meta, url };
-    } catch { /* next source */ }
-  }
-  throw new Error('all-sources-failed');
 }
 
 function shakeInput() {
@@ -963,6 +961,41 @@ function basicProjectData(url) {
   return { url: parsed.toString(), host, title: host, description: '', image: null, favicon: null };
 }
 
+/**
+ * Non-blocking background metadata enrichment.
+ * Runs after the project is already saved in the database and shown to the user.
+ * Never blocks the UI and has a strict 5-second timeout.
+ */
+async function enrichProjectInBackground(id) {
+  if (!id) return;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), METADATA_TIMEOUT_MS + 500);
+  try {
+    const res = await fetch(`/api/projects/${encodeURIComponent(id)}/metadata`, {
+      method: 'POST',
+      signal: ctrl.signal,
+      cache: 'no-store',
+    });
+    if (!res.ok) return;
+    const out = await res.json().catch(() => null);
+    if (!out || !out.ok || !out.updated || !out.project) return;
+
+    // Only update if the project is still in the list and not currently open in the editor
+    const editingId = $('#project-modal') && !$('#project-modal').hidden ? $('#project-edit-id')?.value : null;
+    if (editingId === id) return;
+
+    const index = projects.findIndex((p) => p.id === id);
+    if (index < 0) return;
+
+    projects[index] = out.project;
+    renderGrid();
+  } catch {
+    /* Metadata is optional; link is already safely saved in DB */
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function analyzeAndAdd(url) {
   const btn = $('#add-btn');
   const spinner = $('#add-spinner');
@@ -973,38 +1006,37 @@ async function analyzeAndAdd(url) {
   label.textContent = t('form.btnLoading');
 
   try {
-    // Metadata is an enhancement, not a requirement for saving a website. A
-    // valid link is always kept even when its host blocks metadata requests.
-    let data;
-    let metadataUnavailable = false;
-    try {
-      data = await analyzeSite(url);
-    } catch {
-      data = basicProjectData(url);
-      metadataUnavailable = true;
-    }
+    const data = basicProjectData(url);
 
+    // Step 1: Save the validated URL immediately to the Database
     const res = await fetch('/api/projects', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        url: data.url, host: data.host, title: data.title,
-        description: data.description || '', image: data.image || null, favicon: data.favicon || null,
+        url: data.url,
+        host: data.host,
+        title: data.title,
+        description: data.description,
+        image: data.image,
+        favicon: data.favicon,
       }),
     });
     const out = await res.json().catch(() => ({}));
 
     if (res.status === 409) { toast(t('toast.duplicate'), 'error'); shakeInput(); return; }
-    if (res.status === 401) { toast(t('toast.needOwner'), 'error'); setOwner(false); return; }
-    if (!res.ok || !out.ok) { toast(t('toast.savefail'), 'error'); return; }
+    if (res.status === 401) { toast(t('toast.needOwner'), 'error'); setOwner(false); openModal(); return; }
+    if (!res.ok || !out.ok || !out.project) { toast(t('toast.savefail'), 'error'); shakeInput(); return; }
 
+    // Step 2: Immediately show the saved project to the user without waiting for metadata
     projects.unshift(out.project);
     renderGrid();
     $('#url-input').value = '';
     const card = document.querySelector(`.work-card[data-id="${out.project.id}"]`);
     if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    const suffix = metadataUnavailable ? t('toast.addedWithoutMeta') : t('toast.added');
-    toast(`${out.project.title} — ${suffix}`, 'success');
+    toast(`${out.project.title} — ${t('toast.added')}`, 'success');
+
+    // Step 3: Fetch metadata in the background and update the card if available
+    enrichProjectInBackground(out.project.id);
   } catch {
     toast(t('toast.savefail'), 'error');
     shakeInput();
@@ -1053,9 +1085,16 @@ async function saveProjectDetails() {
     error.hidden = false; return;
   }
   try {
-    const res = await fetch('/api/projects?id=' + encodeURIComponent(id), {
+    const res = await fetch('/api/projects/' + encodeURIComponent(id), {
       method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
     });
+    if (res.status === 401) {
+      closeProjectEditor();
+      setOwner(false);
+      toast(t('toast.needOwner'), 'error');
+      openModal();
+      return;
+    }
     const out = await res.json().catch(() => ({}));
     if (!res.ok || !out.ok) throw new Error(out.error || 'save-failed');
     projects = projects.map((p) => p.id === id ? out.project : p);
@@ -1067,8 +1106,8 @@ async function saveProjectDetails() {
 
 async function removeProject(id) {
   try {
-    const res = await fetch('/api/projects?id=' + encodeURIComponent(id), { method: 'DELETE' });
-    if (res.status === 401) { toast(t('toast.needOwner'), 'error'); setOwner(false); return; }
+    const res = await fetch('/api/projects/' + encodeURIComponent(id), { method: 'DELETE' });
+    if (res.status === 401) { toast(t('toast.needOwner'), 'error'); setOwner(false); openModal(); return; }
     if (!res.ok) { toast(t('toast.savefail'), 'error'); return; }
     projects = projects.filter((p) => p.id !== id);
     renderGrid();
@@ -1585,9 +1624,16 @@ function bindEvents() {
     if (btn) copyNumber(btn);
   });
 
-  // nav scroll state
+  // nav scroll state (only mutate DOM when scrolled state flips)
   const nav = $('#nav');
-  const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 24);
+  let navScrolled = null;
+  const onScroll = () => {
+    const next = window.scrollY > 24;
+    if (next !== navScrolled) {
+      navScrolled = next;
+      nav.classList.toggle('scrolled', next);
+    }
+  };
   addEventListener('scroll', onScroll, { passive: true });
   onScroll();
 
@@ -1629,37 +1675,47 @@ const PARTICLE_PLAN = [
   { x: 88, y: 70, s: 6, c: 'rgba(37,199,255,.4)',  f: 0.05, bob: 14, d: -8 },
 ];
 
+let cubeScrollBound = false;
+
 function buildCubeField() {
   const field = $('#cube-field');
   if (!field) return;
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (reduced) { field.innerHTML = ''; return; }
 
+  const lite = isLowEndDevice();
   const small = window.matchMedia('(max-width: 760px)').matches;
-  const cubes = small ? CUBE_PLAN.filter((_, i) => i % 2 === 0) : CUBE_PLAN;
-  const dots = small ? PARTICLE_PLAN.slice(0, 2) : PARTICLE_PLAN;
+  const cubes = (small || lite) ? CUBE_PLAN.filter((_, i) => i % 2 === 0) : CUBE_PLAN;
+  const dots = (small || lite) ? PARTICLE_PLAN.slice(0, 2) : PARTICLE_PLAN;
 
   field.innerHTML =
     cubes.map((c) => `
       <span class="pcube ${c.c}" data-f="${c.f}"
-            style="left:${c.x}%; top:${c.y}%; --s:${small ? Math.round(c.s * .68) : c.s}px; --spin:${c.spin}s; --bob:${c.bob}s; --d:${c.d}s">
+            style="left:${c.x}%; top:${c.y}%; --s:${small || lite ? Math.round(c.s * .68) : c.s}px; --spin:${c.spin}s; --bob:${c.bob}s; --d:${c.d}s">
         <span class="pcube-f"><span class="pcube-i"><i></i><i></i><i></i><i></i><i></i><i></i></span></span>
       </span>`).join('') +
     dots.map((p) => `
       <span class="particle" data-f="${p.f}"
             style="left:${p.x}%; top:${p.y}%; --ps:${p.s}px; --pc:${p.c}; --bob:${p.bob}s; --d:${p.d}s"></span>`).join('');
 
-  const movers = Array.from(field.children);
+  // Skip scroll-linked style recalculations on weak or coarse-pointer devices
+  if (lite || small || window.matchMedia('(pointer: coarse)').matches) return;
+  if (cubeScrollBound) return;
+  cubeScrollBound = true;
+
   let ticking = false;
   const place = () => {
-    const y = window.scrollY || 0;
-    movers.forEach((el) => {
-      el.style.setProperty('--sy', (y * parseFloat(el.dataset.f || 0)).toFixed(1));
-    });
     ticking = false;
+    if (isLowEndDevice()) return;
+    const movers = field.children;
+    const y = window.scrollY || 0;
+    for (let i = 0; i < movers.length; i++) {
+      const el = movers[i];
+      el.style.setProperty('--sy', (y * parseFloat(el.dataset.f || 0)).toFixed(1));
+    }
   };
   const onScrollCubes = () => {
-    if (ticking) return;
+    if (ticking || isLowEndDevice()) return;
     ticking = true;
     requestAnimationFrame(place);
   };
@@ -1670,63 +1726,139 @@ function buildCubeField() {
 function init3DMotion() {
   const finePointer = window.matchMedia('(pointer: fine)').matches;
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (!finePointer || reduced) return;
+  if (!finePointer || reduced || isLowEndDevice()) return;
 
   document.body.classList.add('has-pointer');
   const aura = $('#cursor-aura');
-  let frame = 0, mouseX = innerWidth / 2, mouseY = innerHeight / 2;
+  const hero = $('#hero-visual');
+
+  let frame = 0;
+  let mouseX = innerWidth / 2, mouseY = innerHeight / 2;
+  let heroRect = null, overHero = false;
+  let activeCard = null, cardRect = null;
+
+  const invalidateRects = () => { heroRect = null; cardRect = null; };
+  addEventListener('scroll', invalidateRects, { passive: true });
+  addEventListener('resize', invalidateRects, { passive: true });
 
   const paintPointer = () => {
     frame = 0;
+    if (isLowEndDevice()) return;
+
     if (aura) {
       aura.style.setProperty('--mx', `${mouseX}px`);
       aura.style.setProperty('--my', `${mouseY}px`);
     }
-  };
-  addEventListener('pointermove', (e) => {
-    mouseX = e.clientX; mouseY = e.clientY;
-    if (!frame) frame = requestAnimationFrame(paintPointer);
-  }, { passive: true });
 
-  const hero = $('#hero-visual');
+    if (overHero && hero) {
+      if (!heroRect) heroRect = hero.getBoundingClientRect();
+      if (heroRect.width > 0 && heroRect.height > 0) {
+        const x = (mouseX - heroRect.left) / heroRect.width - .5;
+        const y = (mouseY - heroRect.top) / heroRect.height - .5;
+        hero.style.setProperty('--ry', `${(x * 11).toFixed(2)}deg`);
+        hero.style.setProperty('--rx', `${(-y * 9).toFixed(2)}deg`);
+      }
+    }
+
+    if (activeCard) {
+      if (!cardRect) cardRect = activeCard.getBoundingClientRect();
+      if (cardRect.width > 0 && cardRect.height > 0) {
+        const px = Math.max(0, Math.min(1, (mouseX - cardRect.left) / cardRect.width));
+        const py = Math.max(0, Math.min(1, (mouseY - cardRect.top) / cardRect.height));
+        activeCard.style.setProperty('--card-rx', `${((.5 - py) * 8).toFixed(2)}deg`);
+        activeCard.style.setProperty('--card-ry', `${((px - .5) * 10).toFixed(2)}deg`);
+      }
+    }
+  };
+
   if (hero) {
-    hero.addEventListener('pointermove', (e) => {
-      const r = hero.getBoundingClientRect();
-      const x = (e.clientX - r.left) / r.width - .5;
-      const y = (e.clientY - r.top) / r.height - .5;
-      hero.style.setProperty('--ry', `${(x * 11).toFixed(2)}deg`);
-      hero.style.setProperty('--rx', `${(-y * 9).toFixed(2)}deg`);
-    });
+    hero.addEventListener('pointerenter', () => { overHero = true; heroRect = hero.getBoundingClientRect(); }, { passive: true });
     hero.addEventListener('pointerleave', () => {
+      overHero = false;
+      heroRect = null;
       hero.style.setProperty('--rx', '0deg');
       hero.style.setProperty('--ry', '0deg');
-    });
+    }, { passive: true });
   }
 
   // Event delegation keeps cards added later by the owner fully interactive.
-  let activeCard = null;
   document.addEventListener('pointermove', (e) => {
+    if (isLowEndDevice()) return;
+    mouseX = e.clientX; mouseY = e.clientY;
     const card = e.target.closest('.svc, .about-card, .work-card');
-    if (activeCard && activeCard !== card) {
-      activeCard.style.setProperty('--card-rx', '0deg');
-      activeCard.style.setProperty('--card-ry', '0deg');
+    if (activeCard !== card) {
+      if (activeCard) {
+        activeCard.classList.remove('is-tilting');
+        activeCard.style.setProperty('--card-rx', '0deg');
+        activeCard.style.setProperty('--card-ry', '0deg');
+      }
+      activeCard = card;
+      cardRect = card ? card.getBoundingClientRect() : null;
+      if (card) card.classList.add('is-tilting');
     }
-    activeCard = card;
-    if (!card) return;
-    const r = card.getBoundingClientRect();
-    const px = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
-    const py = Math.max(0, Math.min(1, (e.clientY - r.top) / r.height));
-    card.style.setProperty('--card-rx', `${((.5 - py) * 8).toFixed(2)}deg`);
-    card.style.setProperty('--card-ry', `${((px - .5) * 10).toFixed(2)}deg`);
+    if (!frame) frame = requestAnimationFrame(paintPointer);
   }, { passive: true });
+
   document.addEventListener('pointerout', (e) => {
     const card = e.target.closest('.svc, .about-card, .work-card');
     if (card && !card.contains(e.relatedTarget)) {
+      card.classList.remove('is-tilting');
       card.style.setProperty('--card-rx', '0deg');
       card.style.setProperty('--card-ry', '0deg');
-      if (activeCard === card) activeCard = null;
+      if (activeCard === card) { activeCard = null; cardRect = null; }
     }
+  }, { passive: true });
+}
+
+/* ----------------------------------------------------------------------
+ * VIEWPORT-AWARE ANIMATION PAUSING & RUNTIME FPS GUARD
+ * Pauses infinite CSS animations when sections scroll out of view or when
+ * the tab is hidden, and automatically enables `perf-lite` if frame rate
+ * drops on an underpowered GPU.
+ * -------------------------------------------------------------------- */
+function initViewportPerformance() {
+  document.addEventListener('visibilitychange', () => {
+    document.body.classList.toggle('tab-hidden', document.hidden);
   });
+
+  if ('IntersectionObserver' in window) {
+    const sectionObserver = new IntersectionObserver((entries) => {
+      for (let i = 0; i < entries.length; i++) {
+        const entry = entries[i];
+        entry.target.classList.toggle('offscreen', !entry.isIntersecting);
+      }
+    }, { rootMargin: '160px 0px' });
+
+    $$('.hero, .marquee, #services, #work, #about, #contact').forEach((sec) => {
+      sectionObserver.observe(sec);
+    });
+  }
+
+  // Runtime FPS monitor: if a device not caught by static heuristics drops
+  // below ~38 FPS over a 28-frame window, step down to perf-lite automatically.
+  if (!isLowEndDevice() && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    let samples = 0, slowFrames = 0, last = performance.now();
+    const probe = (now) => {
+      const dt = now - last;
+      last = now;
+      // Ignore tab-switch spikes (> 250ms)
+      if (dt > 0 && dt < 250) {
+        samples++;
+        if (dt > 28) slowFrames++;
+      }
+      if (samples < 28) {
+        requestAnimationFrame(probe);
+      } else if (slowFrames >= 12) {
+        document.documentElement.classList.add('perf-lite');
+        document.body.classList.remove('has-pointer');
+        buildCubeField();
+      }
+    };
+    setTimeout(() => {
+      last = performance.now();
+      requestAnimationFrame(probe);
+    }, 900);
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1734,11 +1866,15 @@ document.addEventListener('DOMContentLoaded', () => {
   init3DMotion();
   buildCubeField();
   bindEvents();
-  buildShowcase();
   buildBubbles();
   applyLang(lang); // paint immediately with built-in defaults, no flash
   applyDeviceMode(deviceMode, { remember: false });
-  observeReveals();
-  fetchContent().then(() => applyLang(lang)); // then layer any owner overrides on top
-  checkSession().then(loadProjects);
+  initViewportPerformance();
+
+  // Fetch content overrides and portfolio in parallel; only rebuild text if
+  // the owner has actually saved custom overrides on the server.
+  fetchContent().then((hasOverrides) => {
+    if (hasOverrides) applyLang(lang);
+  });
+  loadProjects();
 });

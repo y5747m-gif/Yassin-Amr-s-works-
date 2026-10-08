@@ -1,7 +1,13 @@
-# runtime state written by the server (published projects)
+# runtime state written by the server (published projects & backups)
 data/
 
-# misc
+# environment variables & secrets (never commit to GitHub)
+.env
+.env.*
+!.env.example
+
+# Vercel & dependencies
+.vercel/
 node_modules/
 .DS_Store
 *.log

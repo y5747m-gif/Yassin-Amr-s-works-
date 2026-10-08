@@ -1,46 +1,51 @@
 /**
- * Pixelio — official site server (zero dependencies, Node 18+)
+ * Pixelio — official site server (Node 18+ & Vercel Serverless compatible)
  *
  *  - Serves the static site from ./public
- *  - GET    /api/analyze?url=...   → reads a website's public metadata
- *  - GET    /api/projects          → the published portfolio (public)
- *  - POST   /api/login             → owner login  { username, password }
- *  - POST   /api/logout            → ends the owner session
- *  - GET    /api/session           → { owner: true|false }
- *  - POST   /api/projects          → add a project        (owner only)
- *  - DELETE /api/projects?id=...   → remove a project     (owner only)
- *  - GET    /api/content           → every saved text/content override (public)
- *  - PUT    /api/content           → save one override  { scope, path, value } (owner only)
- *  - DELETE /api/content?scope=&path=  → revert one override to its default   (owner only)
+ *  - GET    /api/analyze?url=...           → reads a website's public metadata (5s max timeout)
+ *  - GET    /api/projects                  → the published portfolio (public)
+ *  - POST   /api/projects                  → add a project immediately to DB (owner only)
+ *  - POST   /api/projects/:id/metadata     → background metadata enrichment (owner only)
+ *  - PUT    /api/projects/:id (or ?id=...) → update a project in DB (owner only)
+ *  - DELETE /api/projects/:id (or ?id=...) → remove a project from DB (owner only)
+ *  - POST   /api/login                     → owner login  { username, password }
+ *  - POST   /api/logout                    → ends the owner session
+ *  - GET    /api/session                   → { owner: true|false }
+ *  - GET    /api/content                   → every saved text/content override (public)
+ *  - PUT    /api/content                   → save one override  { scope, path, value } (owner only)
+ *  - DELETE /api/content?scope=&path=      → revert one override to its default (owner only)
  *
- * Owner credentials come from the environment:
- *      OWNER_USER   (default: owner)
- *      OWNER_PASS   (default: TWE@2026)
- *      SESSION_SECRET (default: random, regenerated on every boot)
- *
- * Run:  node server.js   (binds 0.0.0.0:3000, override with PORT env)
+ * Run locally:  node server.js   (binds 0.0.0.0:3000, override with PORT env)
  */
+
+'use strict';
 
 const http = require('node:http');
 const fs = require('node:fs');
-const fsp = require('node:fs/promises');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const zlib = require('node:zlib');
 const dns = require('node:dns').promises;
 const { parseSiteMeta } = require('./public/js/parse.js');
+const db = require('./lib/db.js');
 
 const PORT = Number(process.env.PORT) || 3000;
 const PUBLIC_DIR = path.join(__dirname, 'public');
-const DATA_DIR = path.join(__dirname, 'data');
-const PROJECTS_FILE = path.join(DATA_DIR, 'projects.json');
-const CONTENT_FILE = path.join(DATA_DIR, 'content.json');
-const FETCH_TIMEOUT_MS = 20000;
-const MAX_BODY_CHARS = 2_000_000;
+const FETCH_TIMEOUT_MS = 5000; // Strict 5-second max timeout for external metadata
+const DNS_TIMEOUT_MS = 3500;
+const MAX_BODY_CHARS = 512_000;
 const MAX_JSON_BODY = 256 * 1024;
 
 const OWNER_USER = process.env.OWNER_USER || 'owner';
 const OWNER_PASS = process.env.OWNER_PASS || 'TWE@2026';
-const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
+// Deterministic fallback so serverless cold starts on Vercel do not invalidate active owner sessions
+const SESSION_SECRET =
+  process.env.SESSION_SECRET ||
+  crypto
+    .createHmac('sha256', 'pixelio-serverless-session-v1')
+    .update(`${OWNER_USER}:${OWNER_PASS}`)
+    .digest('hex');
+
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
 const COOKIE_NAME = 'twe_session';
 
@@ -54,6 +59,7 @@ const MIME = {
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
   '.webp': 'image/webp',
+  '.avif': 'image/avif',
   '.gif': 'image/gif',
   '.ico': 'image/x-icon',
   '.mp4': 'video/mp4',
@@ -65,16 +71,19 @@ const MIME = {
 
 /* ---------------------------------- utils --------------------------------- */
 
-function sendJson(res, status, obj) {
+function sendJson(res, status, obj, cacheControl = 'no-store') {
   const body = JSON.stringify(obj);
   res.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
-    'Cache-Control': 'no-store',
+    'Cache-Control': cacheControl,
   });
   res.end(body);
 }
 
 function readJsonBody(req) {
+  if (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) {
+    return Promise.resolve(req.body);
+  }
   return new Promise((resolve, reject) => {
     let size = 0;
     const chunks = [];
@@ -140,7 +149,11 @@ function parseCookies(header) {
     .forEach((part) => {
       const i = part.indexOf('=');
       if (i < 0) return;
-      out[part.slice(0, i).trim()] = decodeURIComponent(part.slice(i + 1).trim());
+      try {
+        out[part.slice(0, i).trim()] = decodeURIComponent(part.slice(i + 1).trim());
+      } catch {
+        out[part.slice(0, i).trim()] = part.slice(i + 1).trim();
+      }
     });
   return out;
 }
@@ -150,10 +163,14 @@ function isOwner(req) {
   return Boolean(verifySessionToken(token));
 }
 
-function setSessionCookie(res, token, maxAgeSec) {
+function setSessionCookie(req, res, token, maxAgeSec) {
+  const isSecure =
+    req.headers['x-forwarded-proto'] === 'https' ||
+    Boolean(req.socket && req.socket.encrypted);
+  const secureFlag = isSecure ? '; Secure' : '';
   res.setHeader(
     'Set-Cookie',
-    `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSec}`,
+    `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSec}${secureFlag}`,
   );
 }
 
@@ -182,103 +199,11 @@ function throttleReset(ip) {
   attempts.delete(ip);
 }
 
-/* --------------------------------- storage --------------------------------- */
-
-let projects = [];
-let writeQueue = Promise.resolve();
-let removedLegacyDemoProjects = false;
-
-// These IDs were used only by the old bundled trial portfolio.  Filtering them
-// during startup also cleans installations that were first run before this
-// change, while leaving every owner-added project untouched.
-const LEGACY_DEMO_IDS = new Set(['demo-1', 'demo-2', 'demo-3', 'demo-4']);
-
-function isLegacyDemoProject(project) {
-  return Boolean(project && (project.demo === true || LEGACY_DEMO_IDS.has(project.id)));
-}
-
-function loadProjects() {
-  try {
-    if (!fs.existsSync(PROJECTS_FILE)) return [];
-    const parsed = JSON.parse(fs.readFileSync(PROJECTS_FILE, 'utf8'));
-    if (!Array.isArray(parsed)) return [];
-
-    const savedProjects = parsed.filter((project) => !isLegacyDemoProject(project));
-    removedLegacyDemoProjects = savedProjects.length !== parsed.length;
-    return savedProjects;
-  } catch (err) {
-    console.error('Could not read projects.json:', err.message);
-    return [];
-  }
-}
-
-async function atomicWriteJson(file, value) {
-  await fsp.mkdir(path.dirname(file), { recursive: true });
-  const tempFile = `${file}.${process.pid}.${crypto.randomBytes(6).toString('hex')}.tmp`;
-  try {
-    await fsp.writeFile(tempFile, JSON.stringify(value, null, 2), 'utf8');
-    await fsp.rename(tempFile, file);
-  } catch (err) {
-    await fsp.unlink(tempFile).catch(() => {});
-    throw err;
-  }
-}
-
-function persistProjects() {
-  // Queue writes and replace the file atomically, so an interrupted write can
-  // never leave the portfolio empty or partially written after a restart.
-  writeQueue = writeQueue
-    .then(() => atomicWriteJson(PROJECTS_FILE, projects))
-    .catch((err) => console.error('Could not save projects:', err.message));
-  return writeQueue;
-}
-
-/* ------------------------------ site content -------------------------------
- * Every editable word on the page (text, headings, list items, contact
- * numbers, meta tags…) is a "content override". Overrides are stored as a
- * flat map per scope:
- *    { en: { "hero.title": "...", "services.items.3.t": "..." },
- *      ar: { ... },
- *      site: { "contacts.0.display": "..." } }
- * The browser ships the built-in defaults (public/js/app.js) and layers
- * these overrides on top, so the owner can change literally anything —
- * down to a single word — without redeploying.
- * -------------------------------------------------------------------------- */
+/* ------------------------------ site content ------------------------------- */
 
 const CONTENT_SCOPES = new Set(['en', 'ar', 'site']);
 const CONTENT_PATH_RE = /^[a-zA-Z][a-zA-Z0-9_.-]{0,140}$/;
 const CONTENT_MAX_LEN = 6000;
-
-let content = { en: {}, ar: {}, site: {} };
-let contentWriteQueue = Promise.resolve();
-
-function loadContent() {
-  try {
-    if (fs.existsSync(CONTENT_FILE)) {
-      const parsed = JSON.parse(fs.readFileSync(CONTENT_FILE, 'utf8'));
-      if (parsed && typeof parsed === 'object') {
-        return {
-          en: (parsed.en && typeof parsed.en === 'object') ? parsed.en : {},
-          ar: (parsed.ar && typeof parsed.ar === 'object') ? parsed.ar : {},
-          site: (parsed.site && typeof parsed.site === 'object') ? parsed.site : {},
-        };
-      }
-    }
-  } catch (err) {
-    console.error('Could not read content.json:', err.message);
-  }
-  return { en: {}, ar: {}, site: {} };
-}
-
-function persistContent() {
-  contentWriteQueue = contentWriteQueue
-    .then(async () => {
-      await fsp.mkdir(DATA_DIR, { recursive: true });
-      await fsp.writeFile(CONTENT_FILE, JSON.stringify(content, null, 2), 'utf8');
-    })
-    .catch((err) => console.error('Could not save content:', err.message));
-  return contentWriteQueue;
-}
 
 function sanitizeContentValue(value) {
   return String(value ?? '')
@@ -287,16 +212,17 @@ function sanitizeContentValue(value) {
 }
 
 async function handleGetContent(res) {
+  const content = await db.getContent();
   return sendJson(res, 200, { ok: true, content });
 }
 
 async function handleSetContent(req, res) {
-  if (!isOwner(req)) return sendJson(res, 401, { ok: false, error: 'unauthorized' });
+  if (!isOwner(req)) return sendJson(res, 401, { ok: false, error: 'unauthorized', message: 'Sign in as owner first.' });
   let body;
   try {
     body = await readJsonBody(req);
   } catch {
-    return sendJson(res, 400, { ok: false, error: 'bad-json' });
+    return sendJson(res, 400, { ok: false, error: 'bad-json', message: 'Invalid JSON request body.' });
   }
 
   const scope = String(body.scope || '');
@@ -306,66 +232,18 @@ async function handleSetContent(req, res) {
   if (typeof body.value !== 'string') return sendJson(res, 400, { ok: false, error: 'bad-value' });
 
   const value = sanitizeContentValue(body.value);
-  content[scope][path_] = value;
-  await persistContent();
+  await db.setContentValue(scope, path_, value);
   return sendJson(res, 200, { ok: true, scope, path: path_, value });
 }
 
 async function handleDeleteContent(req, res, url) {
-  if (!isOwner(req)) return sendJson(res, 401, { ok: false, error: 'unauthorized' });
+  if (!isOwner(req)) return sendJson(res, 401, { ok: false, error: 'unauthorized', message: 'Sign in as owner first.' });
   const scope = String(url.searchParams.get('scope') || '');
   const path_ = String(url.searchParams.get('path') || '');
   if (!CONTENT_SCOPES.has(scope)) return sendJson(res, 400, { ok: false, error: 'bad-scope' });
   if (!CONTENT_PATH_RE.test(path_)) return sendJson(res, 400, { ok: false, error: 'bad-path' });
-  if (Object.prototype.hasOwnProperty.call(content[scope], path_)) {
-    delete content[scope][path_];
-    await persistContent();
-  }
+  await db.deleteContentValue(scope, path_);
   return sendJson(res, 200, { ok: true });
-}
-
-function sanitizeText(value, max) {
-  return String(value ?? '')
-    .replace(/[\u0000-\u001f\u007f]/g, ' ')
-    .trim()
-    .slice(0, max);
-}
-
-function safeHttpUrl(raw) {
-  try {
-    const u = new URL(String(raw));
-    if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
-    return u.toString();
-  } catch {
-    return null;
-  }
-}
-
-function safeImageRef(raw) {
-  const value = String(raw ?? '').trim();
-  if (!value) return null;
-  if (value.startsWith('/img/') || value.startsWith('img/')) return value;
-  return safeHttpUrl(value);
-}
-
-function sanitizeProject(input) {
-  const url = safeHttpUrl(input && input.url);
-  if (!url) return null;
-  let host = sanitizeText(input.host, 120);
-  if (!host) {
-    try { host = new URL(url).hostname.replace(/^www\./, ''); } catch { host = ''; }
-  }
-  return {
-    id: 'p-' + Date.now().toString(36) + crypto.randomBytes(3).toString('hex'),
-    url,
-    host,
-    title: sanitizeText(input.title, 160) || host || 'Untitled',
-    description: sanitizeText(input.description, 420),
-    image: safeImageRef(input.image),
-    favicon: safeImageRef(input.favicon),
-    tag: sanitizeText(input.tag, 40),
-    addedAt: new Date().toISOString(),
-  };
 }
 
 /* ------------------------------ SSRF guards -------------------------------- */
@@ -406,7 +284,11 @@ async function validateFetchUrl(raw) {
   if (url.port && url.port !== '80' && url.port !== '443') return 'bad-port';
   if (!url.hostname || isPrivateHostLiteral(url.hostname)) return 'blocked-host';
   try {
-    const ips = await dns.lookup(url.hostname, { all: true });
+    const lookupPromise = dns.lookup(url.hostname, { all: true });
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('dns-timeout')), DNS_TIMEOUT_MS),
+    );
+    const ips = await Promise.race([lookupPromise, timeoutPromise]);
     if (!ips.length || ips.some((i) => isPrivateIp(i.address))) return 'blocked-host';
   } catch {
     return 'dns-failed';
@@ -414,32 +296,18 @@ async function validateFetchUrl(raw) {
   return null;
 }
 
-/* ------------------------------- analyze API ------------------------------- */
+/* --------------------- Server-Side Metadata Extraction --------------------- */
 
-async function handleAnalyze(url, res) {
-  const bad = (code, message) => sendJson(res, 400, { ok: false, error: code, message });
-
-  const raw = url.searchParams.get('url');
-  if (!raw) return bad('missing-url', 'Missing url parameter.');
-
-  const guard = await validateFetchUrl(raw);
+async function fetchSiteMetadataServerSide(rawUrl) {
+  const guard = await validateFetchUrl(rawUrl);
   if (guard) {
-    const messages = {
-      'invalid-url': 'That does not look like a valid link.',
-      'bad-protocol': 'Only http/https links are supported.',
-      'bad-port': 'Non-standard ports are not allowed.',
-      'blocked-host': 'This address is not allowed.',
-      'dns-failed': 'Could not resolve that host.',
-    };
-    return bad(guard, messages[guard] || 'Blocked.');
+    return { ok: false, error: guard };
   }
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-  let finalUrl;
-  let html;
   try {
-    const resp = await fetch(raw, {
+    const resp = await fetch(rawUrl, {
       signal: controller.signal,
       redirect: 'follow',
       headers: {
@@ -449,34 +317,55 @@ async function handleAnalyze(url, res) {
         'Accept-Language': 'en-US,en;q=0.9,ar;q=0.8',
       },
     });
-    finalUrl = resp.url || raw;
+    const finalUrl = resp.url || rawUrl;
     const type = resp.headers.get('content-type') || '';
-    if (!resp.ok) return bad('http-error', `The site answered with status ${resp.status}.`);
-    if (type && !/html|xml|text/i.test(type)) return bad('not-html', 'That link does not point to a webpage.');
-    html = (await resp.text()).slice(0, MAX_BODY_CHARS);
+    if (!resp.ok) {
+      return { ok: false, error: 'http-error', status: resp.status };
+    }
+    if (type && !/html|xml|text/i.test(type)) {
+      return { ok: false, error: 'not-html' };
+    }
+    const html = (await resp.text()).slice(0, MAX_BODY_CHARS);
+    const data = parseSiteMeta(html, finalUrl);
+    return { ok: true, url: finalUrl, ...data };
   } catch (err) {
     const timedOut = err && (err.name === 'AbortError' || /timeout/i.test(String(err.message || '')));
-    return bad(
-      timedOut ? 'timeout' : 'fetch-failed',
-      timedOut ? 'The site took too long to answer.' : 'Could not reach that site.',
-    );
+    return { ok: false, error: timedOut ? 'timeout' : 'fetch-failed' };
   } finally {
     clearTimeout(timer);
   }
+}
 
-  try {
-    const data = parseSiteMeta(html, finalUrl);
-    sendJson(res, 200, { ok: true, url: finalUrl, ...data });
-  } catch {
-    sendJson(res, 500, { ok: false, error: 'parse-failed', message: 'Could not read the page data.' });
+async function handleAnalyze(url, res) {
+  const bad = (code, message) => sendJson(res, 400, { ok: false, error: code, message });
+
+  const raw = url.searchParams.get('url');
+  if (!raw) return bad('missing-url', 'Missing url parameter.');
+
+  const result = await fetchSiteMetadataServerSide(raw);
+  if (!result.ok) {
+    const messages = {
+      'invalid-url': 'That does not look like a valid link.',
+      'bad-protocol': 'Only http/https links are supported.',
+      'bad-port': 'Non-standard ports are not allowed.',
+      'blocked-host': 'This address is not allowed.',
+      'dns-failed': 'Could not resolve that host.',
+      'http-error': `The site answered with status ${result.status || 'error'}.`,
+      'not-html': 'That link does not point to a webpage.',
+      'timeout': 'The site took too long to answer.',
+      'fetch-failed': 'Could not reach that site.',
+    };
+    return bad(result.error, messages[result.error] || 'Could not read the page data.');
   }
+
+  return sendJson(res, 200, result);
 }
 
 /* --------------------------------- routes ---------------------------------- */
 
 async function handleLogin(req, res) {
   const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() ||
-             req.socket.remoteAddress || 'unknown';
+             (req.socket && req.socket.remoteAddress) || 'unknown';
 
   const wait = throttleCheck(ip);
   if (wait) {
@@ -487,7 +376,7 @@ async function handleLogin(req, res) {
   try {
     body = await readJsonBody(req);
   } catch {
-    return sendJson(res, 400, { ok: false, error: 'bad-json' });
+    return sendJson(res, 400, { ok: false, error: 'bad-json', message: 'Invalid login payload.' });
   }
 
   const userOk = timingSafeEqual(String(body.username || '').trim(), OWNER_USER);
@@ -502,79 +391,123 @@ async function handleLogin(req, res) {
   }
 
   throttleReset(ip);
-  setSessionCookie(res, makeSessionToken(OWNER_USER), Math.floor(SESSION_TTL_MS / 1000));
+  setSessionCookie(req, res, makeSessionToken(OWNER_USER), Math.floor(SESSION_TTL_MS / 1000));
   return sendJson(res, 200, { ok: true, owner: true, user: OWNER_USER });
 }
 
-function handleLogout(res) {
-  setSessionCookie(res, '', 0);
+function handleLogout(req, res) {
+  setSessionCookie(req, res, '', 0);
   return sendJson(res, 200, { ok: true, owner: false });
 }
 
 async function handleAddProject(req, res) {
-  if (!isOwner(req)) return sendJson(res, 401, { ok: false, error: 'unauthorized' });
+  if (!isOwner(req)) return sendJson(res, 401, { ok: false, error: 'unauthorized', message: 'Sign in as owner first.' });
   let body;
   try {
     body = await readJsonBody(req);
   } catch {
-    return sendJson(res, 400, { ok: false, error: 'bad-json' });
-  }
-  const project = sanitizeProject(body);
-  if (!project) return sendJson(res, 400, { ok: false, error: 'invalid-project' });
-
-  const key = (u) => {
-    try {
-      const x = new URL(u);
-      return (x.hostname.replace(/^www\./, '') + x.pathname.replace(/\/+$/, '')).toLowerCase();
-    } catch {
-      return String(u).toLowerCase();
-    }
-  };
-  if (projects.some((p) => key(p.url) === key(project.url))) {
-    return sendJson(res, 409, { ok: false, error: 'duplicate' });
+    return sendJson(res, 400, { ok: false, error: 'bad-json', message: 'Invalid JSON request body.' });
   }
 
-  projects.unshift(project);
-  await persistProjects();
-  return sendJson(res, 200, { ok: true, project });
+  const created = await db.createProject(body);
+  if (!created.ok) {
+    return sendJson(res, created.status || 400, {
+      ok: false,
+      error: created.error || 'save-failed',
+      message: created.message || 'Could not save project.',
+    });
+  }
+
+  return sendJson(res, 200, { ok: true, project: created.project });
 }
 
-async function handleUpdateProject(req, res, url) {
-  if (!isOwner(req)) return sendJson(res, 401, { ok: false, error: 'unauthorized' });
-  const id = String(url.searchParams.get('id') || '');
-  const index = projects.findIndex((p) => p.id === id);
-  if (index < 0) return sendJson(res, 404, { ok: false, error: 'not-found' });
+async function handleEnrichProjectMetadata(req, res, id) {
+  if (!isOwner(req)) return sendJson(res, 401, { ok: false, error: 'unauthorized', message: 'Sign in as owner first.' });
+  const existing = await db.getProjectById(id);
+  if (!existing) return sendJson(res, 404, { ok: false, error: 'not-found' });
+
+  const meta = await fetchSiteMetadataServerSide(existing.url);
+  if (!meta.ok) {
+    // Metadata failure never fails the saved project
+    return sendJson(res, 200, { ok: true, updated: false, project: existing });
+  }
+
+  const enriched = await db.enrichProjectWithMetadata(id, meta);
+  return sendJson(res, 200, {
+    ok: true,
+    updated: Boolean(enriched.updated),
+    project: enriched.project || existing,
+  });
+}
+
+async function handleUpdateProject(req, res, id) {
+  if (!isOwner(req)) return sendJson(res, 401, { ok: false, error: 'unauthorized', message: 'Sign in as owner first.' });
+  if (!id) return sendJson(res, 400, { ok: false, error: 'missing-id' });
+
   let body;
-  try { body = await readJsonBody(req); }
-  catch { return sendJson(res, 400, { ok: false, error: 'bad-json' }); }
+  try {
+    body = await readJsonBody(req);
+  } catch {
+    return sendJson(res, 400, { ok: false, error: 'bad-json', message: 'Invalid JSON request body.' });
+  }
 
-  const clean = sanitizeProject(body);
-  if (!clean) return sendJson(res, 400, { ok: false, error: 'invalid-project' });
-  const old = projects[index];
-  const project = {
-    ...clean,
-    id: old.id,
-    titleAr: sanitizeText(body.titleAr, 160),
-    descriptionAr: sanitizeText(body.descriptionAr, 420),
-    addedAt: old.addedAt || clean.addedAt,
-    updatedAt: new Date().toISOString(),
-  };
-  projects[index] = project;
-  await persistProjects();
-  return sendJson(res, 200, { ok: true, project });
+  const updated = await db.updateProject(id, body);
+  if (!updated.ok) {
+    return sendJson(res, updated.status || 400, {
+      ok: false,
+      error: updated.error || 'update-failed',
+      message: updated.message || 'Could not update project.',
+    });
+  }
+
+  return sendJson(res, 200, { ok: true, project: updated.project });
 }
 
-async function handleDeleteProject(req, res, url) {
-  if (!isOwner(req)) return sendJson(res, 401, { ok: false, error: 'unauthorized' });
-  const id = url.searchParams.get('id');
-  const before = projects.length;
-  projects = projects.filter((p) => p.id !== id);
-  if (projects.length === before) return sendJson(res, 404, { ok: false, error: 'not-found' });
-  await persistProjects();
+async function handleDeleteProject(req, res, id) {
+  if (!isOwner(req)) return sendJson(res, 401, { ok: false, error: 'unauthorized', message: 'Sign in as owner first.' });
+  if (!id) return sendJson(res, 400, { ok: false, error: 'missing-id' });
+
+  const removed = await db.deleteProject(id);
+  if (!removed.ok) {
+    return sendJson(res, removed.status || 404, {
+      ok: false,
+      error: removed.error || 'delete-failed',
+      message: removed.message || 'Could not remove project.',
+    });
+  }
   return sendJson(res, 200, { ok: true });
 }
 
 /* -------------------------------- static ----------------------------------- */
+
+const COMPRESSIBLE_EXT = new Set(['.html', '.css', '.js', '.json', '.svg', '.txt']);
+const staticCache = new Map(); // filePath -> { mtimeMs, size, etag, raw, gzip, br }
+
+function getStaticEntry(filePath, stat, ext) {
+  const cached = staticCache.get(filePath);
+  if (cached && cached.mtimeMs === stat.mtimeMs && cached.size === stat.size) {
+    return cached;
+  }
+  if (!COMPRESSIBLE_EXT.has(ext) || stat.size > 2 * 1024 * 1024) {
+    return null;
+  }
+  const raw = fs.readFileSync(filePath);
+  const etag = `W/"${stat.size.toString(16)}-${Math.trunc(stat.mtimeMs).toString(16)}"`;
+  const entry = {
+    mtimeMs: stat.mtimeMs,
+    size: stat.size,
+    etag,
+    raw,
+    gzip: raw.length > 512 ? zlib.gzipSync(raw, { level: 6 }) : null,
+    br: raw.length > 512 && typeof zlib.brotliCompressSync === 'function'
+      ? zlib.brotliCompressSync(raw, {
+          params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 5 },
+        })
+      : null,
+  };
+  staticCache.set(filePath, entry);
+  return entry;
+}
 
 function serveStatic(req, res, pathname) {
   if (pathname === '/') pathname = '/index.html';
@@ -589,23 +522,52 @@ function serveStatic(req, res, pathname) {
       return res.end('404 — Not found');
     }
     const ext = path.extname(filePath).toLowerCase();
+    const contentType = MIME[ext] || 'application/octet-stream';
+    const cacheControl = ext === '.html' ? 'no-cache' : 'public, max-age=3600';
+
+    try {
+      const entry = getStaticEntry(filePath, stat, ext);
+      if (entry) {
+        if (req.headers['if-none-match'] === entry.etag) {
+          res.writeHead(304, { ETag: entry.etag, 'Cache-Control': cacheControl });
+          return res.end();
+        }
+        const accept = String(req.headers['accept-encoding'] || '');
+        const headers = {
+          'Content-Type': contentType,
+          'Cache-Control': cacheControl,
+          ETag: entry.etag,
+          Vary: 'Accept-Encoding',
+        };
+        let payload = entry.raw;
+        if (entry.br && /\bbr\b/.test(accept)) {
+          payload = entry.br;
+          headers['Content-Encoding'] = 'br';
+        } else if (entry.gzip && /\bgzip\b/.test(accept)) {
+          payload = entry.gzip;
+          headers['Content-Encoding'] = 'gzip';
+        }
+        headers['Content-Length'] = payload.length;
+        res.writeHead(200, headers);
+        if (req.method === 'HEAD') return res.end();
+        return res.end(payload);
+      }
+    } catch {
+      /* fall through to stream */
+    }
+
     res.writeHead(200, {
-      'Content-Type': MIME[ext] || 'application/octet-stream',
-      'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=3600',
+      'Content-Type': contentType,
+      'Cache-Control': cacheControl,
     });
     if (req.method === 'HEAD') return res.end();
     fs.createReadStream(filePath).pipe(res);
   });
 }
 
-/* --------------------------------- server ---------------------------------- */
+/* ----------------------------- request handler ----------------------------- */
 
-projects = loadProjects();
-content = loadContent();
-// Persist the one-time removal of the former bundled demo cards immediately.
-if (removedLegacyDemoProjects) persistProjects();
-
-const server = http.createServer(async (req, res) => {
+async function requestHandler(req, res) {
   let url;
   try {
     url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
@@ -615,7 +577,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   try {
-    const p = url.pathname;
+    const p = url.pathname.replace(/\/+$/, '') || '/';
 
     if (p === '/api/analyze') {
       if (req.method !== 'GET') { res.writeHead(405); return res.end(); }
@@ -633,16 +595,44 @@ const server = http.createServer(async (req, res) => {
 
     if (p === '/api/logout') {
       if (req.method !== 'POST') { res.writeHead(405); return res.end(); }
-      return handleLogout(res);
+      return handleLogout(req, res);
+    }
+
+    // Match /api/projects, /api/projects/:id, and /api/projects/:id/metadata
+    const projMetaMatch = p.match(/^\/api\/projects\/([^/]+)\/metadata$/);
+    if (projMetaMatch) {
+      if (req.method !== 'POST') { res.writeHead(405); return res.end(); }
+      return await handleEnrichProjectMetadata(req, res, decodeURIComponent(projMetaMatch[1]));
+    }
+
+    const projItemMatch = p.match(/^\/api\/projects\/([^/]+)$/);
+    if (projItemMatch) {
+      const id = decodeURIComponent(projItemMatch[1]);
+      if (req.method === 'PUT') return await handleUpdateProject(req, res, id);
+      if (req.method === 'DELETE') return await handleDeleteProject(req, res, id);
+      res.writeHead(405);
+      return res.end();
     }
 
     if (p === '/api/projects') {
       if (req.method === 'GET') {
+        const projects = await db.listProjects();
         return sendJson(res, 200, { ok: true, owner: isOwner(req), projects });
       }
-      if (req.method === 'POST') return await handleAddProject(req, res);
-      if (req.method === 'PUT') return await handleUpdateProject(req, res, url);
-      if (req.method === 'DELETE') return await handleDeleteProject(req, res, url);
+      if (req.method === 'POST') {
+        const action = url.searchParams.get('action');
+        const id = url.searchParams.get('id');
+        if (action === 'metadata' && id) {
+          return await handleEnrichProjectMetadata(req, res, id);
+        }
+        return await handleAddProject(req, res);
+      }
+      if (req.method === 'PUT') {
+        return await handleUpdateProject(req, res, String(url.searchParams.get('id') || ''));
+      }
+      if (req.method === 'DELETE') {
+        return await handleDeleteProject(req, res, String(url.searchParams.get('id') || ''));
+      }
       res.writeHead(405);
       return res.end();
     }
@@ -656,7 +646,11 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (p === '/healthz') {
-      return sendJson(res, 200, { ok: true, uptime: process.uptime() });
+      return sendJson(res, 200, {
+        ok: true,
+        storage: db.isSupabaseConfigured() ? 'supabase' : 'local',
+        uptime: process.uptime(),
+      });
     }
 
     if (req.method !== 'GET' && req.method !== 'HEAD') {
@@ -666,11 +660,29 @@ const server = http.createServer(async (req, res) => {
     return serveStatic(req, res, decodeURIComponent(p));
   } catch (err) {
     console.error('server error:', err);
-    return sendJson(res, 500, { ok: false, error: 'server-error' });
+    return sendJson(res, 500, {
+      ok: false,
+      error: 'server-error',
+      message: 'An unexpected server error occurred. Please try again.',
+    });
   }
+}
+
+/* --------------------------------- server ---------------------------------- */
+
+db.migrateLegacyFilesToDatabase().catch((err) => {
+  console.error('Initial migration check failed:', err.message);
 });
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Pixelio → http://localhost:${PORT}`);
-  console.log(`Owner login: user "${OWNER_USER}" (set OWNER_USER / OWNER_PASS to change)`);
-});
+if (require.main === module) {
+  const server = http.createServer(requestHandler);
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`Pixelio → http://localhost:${PORT}`);
+    console.log(
+      `Storage: ${db.isSupabaseConfigured() ? 'Supabase Database' : 'Local Persistent Storage'}`,
+    );
+    console.log(`Owner login: user "${OWNER_USER}" (set OWNER_USER / OWNER_PASS to change)`);
+  });
+}
+
+module.exports = requestHandler;
