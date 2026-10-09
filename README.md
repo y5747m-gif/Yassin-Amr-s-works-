@@ -157,6 +157,12 @@ browser runs the same plain scripts that are in the repository.
 
 ```
 server.js                 Static server + auth + projects API + content API + /api/analyze
+lib/db.js                 Storage layer: Supabase when configured, atomic JSON files otherwise
+lib/schema.js             Database schema, written in JavaScript (single source of truth)
+api/index.js              Vercel serverless entry point (re-exports server.js)
+scripts/migrate.js        Applies the schema (with SUPABASE_DB_URL) + migrates data/*.json → Supabase
+scripts/emit-schema-sql.js  Regenerates supabase/schema.sql from lib/schema.js
+supabase/schema.sql       Generated SQL reference for the Supabase SQL Editor (npm run schema:sql)
 data/projects.json        Live portfolio, written atomically by the server (git-ignored)
 data/content.json         Every owner-edited word/number/image link (git-ignored)
 public/

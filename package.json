@@ -10,10 +10,14 @@
   "scripts": {
     "start": "node server.js",
     "migrate": "node scripts/migrate.js",
+    "schema:sql": "node scripts/emit-schema-sql.js",
     "test": "node --test"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4"
+  },
+  "optionalDependencies": {
+    "pg": "^8.13.1"
   },
   "devDependencies": {
     "jsdom": "^26.1.0"
