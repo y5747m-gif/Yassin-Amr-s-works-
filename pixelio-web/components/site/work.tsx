@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Bookmark, Check } from "lucide-react";
 import { Reveal, WordsReveal } from "@/components/site/reveal";
 import { ProjectModal } from "@/components/site/project-modal";
 import { useLocale } from "@/components/providers";
@@ -12,6 +12,16 @@ import { cn } from "@/lib/utils";
 export function Work() {
   const { t, locale } = useLocale();
   const [active, setActive] = React.useState<Project | null>(null);
+  const [savedIds, setSavedIds] = React.useState<Set<string>>(() => new Set());
+
+  function toggleSaved(id: string) {
+    setSavedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   return (
     <section id="work" className="relative px-6 py-32 md:py-44">
@@ -37,7 +47,14 @@ export function Work() {
         <div className="mt-16 columns-1 gap-6 [column-fill:_balance] sm:columns-2 lg:columns-3">
           {projects.map((project, i) => (
             <Reveal key={project.id} delay={(i % 3) * 0.08} className="mb-10 break-inside-avoid">
-              <ProjectCard project={project} label={t.work.view} locale={locale} onOpen={() => setActive(project)} />
+              <ProjectCard
+                project={project}
+                label={t.work.view}
+                locale={locale}
+                saved={savedIds.has(project.id)}
+                onSave={() => toggleSaved(project.id)}
+                onOpen={() => setActive(project)}
+              />
             </Reveal>
           ))}
         </div>
@@ -52,44 +69,58 @@ function ProjectCard({
   project,
   label,
   locale,
+  saved,
+  onSave,
   onOpen,
 }: {
   project: Project;
   label: string;
   locale: "en" | "ar";
+  saved: boolean;
+  onSave: () => void;
   onOpen: () => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      aria-haspopup="dialog"
-      className="group block w-full text-start transition-transform duration-[900ms] ease-out-expo hover:-translate-y-1.5"
-    >
-      <div className={cn("relative overflow-hidden rounded-[24px] border border-border bg-muted", project.aspect)}>
-        <Image
-          src={project.image}
-          alt={project.imageAlt}
-          fill
-          sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-          className="object-cover object-top transition-transform duration-[1400ms] ease-out-expo group-hover:scale-[1.05]"
-        />
-        <div className="absolute inset-0 bg-background/0 transition-colors duration-700 group-hover:bg-background/10" />
-        <div className="absolute inset-x-4 bottom-4 flex translate-y-3 items-center justify-between opacity-0 transition-all duration-700 ease-out-expo group-hover:translate-y-0 group-hover:opacity-100">
-          <span className="glass rounded-full border border-border/70 px-4 py-2 text-xs font-medium">{label}</span>
-          <span className="glass grid size-11 place-items-center rounded-full border border-border/70">
-            <ArrowUpRight className="size-4 transition-transform duration-500 ease-out-expo group-hover:rotate-45 [[dir=rtl]_&]:-scale-x-100" />
-          </span>
+    <div className="group block w-full text-start transition-transform duration-[900ms] ease-out-expo hover:-translate-y-1.5">
+      <button type="button" onClick={onOpen} aria-haspopup="dialog" className="block w-full text-start">
+        <div className={cn("relative overflow-hidden rounded-[24px] border border-border bg-muted", project.aspect)}>
+          <Image
+            src={project.image}
+            alt={project.imageAlt}
+            fill
+            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+            className="object-cover object-top transition-transform duration-[1400ms] ease-out-expo group-hover:scale-[1.05]"
+          />
+          <div className="absolute inset-0 bg-background/0 transition-colors duration-700 group-hover:bg-background/10" />
+          <div className="absolute inset-x-4 bottom-4 flex translate-y-3 items-center justify-between opacity-0 transition-all duration-700 ease-out-expo group-hover:translate-y-0 group-hover:opacity-100">
+            <span className="glass rounded-full border border-border/70 px-4 py-2 text-xs font-medium">{label}</span>
+            <span className="glass grid size-11 place-items-center rounded-full border border-border/70">
+              <ArrowUpRight className="size-4 transition-transform duration-500 ease-out-expo group-hover:rotate-45 [[dir=rtl]_&]:-scale-x-100" />
+            </span>
+          </div>
         </div>
-      </div>
 
-      <div className="mt-5 flex items-start justify-between gap-4 px-1">
-        <div>
-          <h3 className="text-xl font-semibold tracking-tight">{project.client}</h3>
-          <p className="mt-1 text-sm text-muted-foreground">{project.type[locale]}</p>
+        <div className="mt-5 flex items-start justify-between gap-4 px-1">
+          <div>
+            <h3 className="text-xl font-semibold tracking-tight">{project.client}</h3>
+            <p className="mt-1 text-sm text-muted-foreground">{project.type[locale]}</p>
+          </div>
+          <span className="pt-1 text-sm tabular-nums text-muted-foreground">{project.year}</span>
         </div>
-        <span className="pt-1 text-sm tabular-nums text-muted-foreground">{project.year}</span>
-      </div>
-    </button>
+      </button>
+      <button
+        type="button"
+        onClick={onSave}
+        aria-pressed={saved}
+        aria-label={saved ? `Remove ${project.client} from saved websites` : `Save ${project.client} website`}
+        className={cn(
+          "mt-3 inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-medium transition-colors",
+          saved ? "border-foreground bg-foreground text-background" : "border-border text-muted-foreground hover:border-foreground hover:text-foreground",
+        )}
+      >
+        {saved ? <Check className="size-3.5" /> : <Bookmark className="size-3.5" />}
+        {saved ? "Saved" : "Save website"}
+      </button>
+    </div>
   );
 }
