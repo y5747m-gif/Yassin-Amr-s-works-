@@ -128,6 +128,43 @@ portfolio from partial writes or server restarts. The site ships with no demo ca
 demo screens. Existing legacy demo cards are removed automatically on startup, while
 owner-added projects are retained.
 
+## 🗂️ The built-in works
+
+The studio's own websites are not re-typed one by one: they live as data in
+**`lib/seed-projects.js`** — each entry carries its link, host, English *and* Arabic
+title, English *and* Arabic description, an optional screenshot, its favicon, a category
+and its position in the grid.
+
+```js
+{ key: 'mokta-ai-3d', url: 'https://yaseen868.vercel.app/', host: 'yaseen868.vercel.app',
+  title: 'Mokta AI 3D — Turn any photo into a 3D model',
+  titleAr: 'Mokta AI 3D — تحويل أي صورة إلى نموذج ثلاثي الأبعاد',
+  description: '…', descriptionAr: '…',
+  image: 'https://yaseen868.vercel.app/assets/og-image.png',
+  favicon: 'https://yaseen868.vercel.app/favicon.ico',
+  tag: 'AI', order: 5 }
+```
+
+**What happens on boot.** The first time a store (Supabase, or `data/projects.json` when
+Supabase is not configured) is read, the missing works are written into it as ordinary
+projects — visible in the portfolio, in the hero device and in the *Projects* counter —
+and a marker (`__builtin_projects_v1`, kept out of the public `/api/content` payload)
+records that the seed has run.
+
+**They are yours to change.** Nothing is hard-coded afterwards: rename a work, rewrite
+its description, change its category, hide it or delete it from the owner panel exactly
+like any other project, in either language. A work that is already stored under the same
+URL is never touched or duplicated, and a deleted one never comes back — the marker makes
+sure the seed runs once per store, not once per deploy.
+
+**Adding a work later.** Append it to the list (unique `key`, unique `order`) and bump
+`SEED_VERSION`. The next boot adds only the new entry; existing rows and owner edits are
+left alone. `test/seed-projects.test.js` covers the whole story: the shape of the data,
+the first-boot seeding, idempotence, owner edits, deletions and pre-existing rows.
+
+`PIXELIO_DATA_DIR` moves the JSON store somewhere else (defaults to `<repo>/data`); the
+tests use it to run against a scratch directory.
+
 ## 🧩 How the page is built
 
 The whole page is rendered by JavaScript. There is no framework and no build step: the
@@ -158,6 +195,7 @@ browser runs the same plain scripts that are in the repository.
 ```
 server.js                 Static server + auth + projects API + content API + /api/analyze
 lib/db.js                 Storage layer: Supabase when configured, atomic JSON files otherwise
+lib/seed-projects.js      The studio's own works as data: bilingual titles, descriptions, images, order
 lib/schema.js             Database schema, written in JavaScript (single source of truth)
 api/index.js              Vercel serverless entry point (re-exports server.js)
 scripts/migrate.js        Applies the schema (with SUPABASE_DB_URL) + migrates data/*.json → Supabase
@@ -177,6 +215,7 @@ test/
   owner.test.js           Owner flows, run against a JSDOM copy of the page
   views.test.js           Views: element ids, escaping, language, layout the stylesheet relies on
   vercel-routing.test.js  API routing through the Vercel rewrite
+  seed-projects.test.js   Built-in works: first boot, idempotence, owner edits & deletions
 ```
 
 ## 📞 Contact

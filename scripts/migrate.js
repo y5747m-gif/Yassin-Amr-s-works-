@@ -93,6 +93,9 @@ async function main() {
   console.log(`Migration completed (${result.mode}).`);
   console.log(`- Projects migrated/verified: ${result.migratedProjects} (total in DB: ${currentProjects.length})`);
   console.log(`- Content overrides migrated/verified: ${result.migratedContentKeys}`);
+  if (result.seededProjects) {
+    console.log(`- Built-in works added: ${result.seededProjects} (lib/seed-projects.js)`);
+  }
   console.log('Original JSON files and .backup.json copies have been safely preserved.');
 }
 
