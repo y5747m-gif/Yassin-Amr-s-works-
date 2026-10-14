@@ -22,7 +22,7 @@ node server.js          # → http://localhost:3000   (PORT env to change)
 | **Intro splash** | A short animated opener: particles converge, the letters **P I X E L I O** assemble in 3D with a light sweep, `STUDIO` spaces out, a gradient line draws, then a bar-wipe reveals the site. Skippable (button or `Esc`), plays once per browser session, disabled under `prefers-reduced-motion`. |
 | **Hero** | Headline, stats and a **floating device** that shows your published project screens (or an empty state until the first project is added). |
 | **The Flood (الطوفان)** | Animated wave layers + rising bubbles behind 12 service cards (graphic design + website design), each with an **Order service** WhatsApp button that surge up in a staggered cascade, followed by three counter-scrolling streams of keywords. |
-| **Our Work** | Every project is displayed **inside a floating device** — a phone on mobile, a laptop on desktop. Tap a screen to open the live site. |
+| **Our Work** | Every site is displayed **inside a floating device** — a phone on mobile, a laptop on desktop — with a gradient **Enter site / «دخول»** button (and a chip over the screen) that opens the live site in a new tab. The ten sites the studio published are built in (see below); the owner can add more from the owner panel. |
 | **About / Contact** | Studio blurb, skill tags, and both phone lines with call / WhatsApp / copy actions, plus a floating WhatsApp button. |
 
 ## 📱 The device frame
@@ -37,6 +37,47 @@ otherwise phone) and the visitor can flip it with the toggle above the hero devi
 their choice is remembered in `localStorage`. Switching animates the frame
 (width, aspect-ratio, corner radius) instead of swapping images.
 
+## 🌐 The published sites (built-in portfolio)
+
+The ten sites the studio built ship **inside the page** — no database and no
+server needed, so they appear on every deploy:
+
+```text
+ningawy · muslim-wa-bas-ai-assistant-1 · el-mona-akademe · montag-est ·
+yaseen868 · shoter-ork-geto · t-m-d-ai · souqi-944p · nova-os-psi · khallesa
+```
+
+They live in one editable list: **`public/js/views/sites.js`** (`PixelioViews.builtinSites`).
+Each entry carries a link, hostname, bilingual title + description, a preview
+image, a favicon and a poster colour. `app.js` merges that list with whatever the
+owner publishes from the owner panel:
+
+- **Entry button.** Every card gets a `دخول` / *Enter site* button next to the
+  hostname, plus a chip that fades in over the device screen — and tapping the
+  screen itself works too. All three open the site in a new tab.
+- **Previews.** A site's own Open Graph / hero image is used when it publishes
+  one; the rest are captured by WordPress `mShots` (no key, free). Behind every
+  preview sits a **designed poster** (site colour + favicon + hostname) so a card
+  looks right before — or instead of — the screenshot arriving.
+- **Counters.** The hero showcase and the “Projects” number follow the same list,
+  so the site shows *10 projects* out of the box.
+- **Copy.** Titles, descriptions and the button label are bilingual
+  (`title` / `titleAr`, `description` / `descriptionAr`, `card.enter`).
+  Everything is inline-editable by the owner like the rest of the page.
+- **No duplicates.** If the owner publishes a project with the same link
+  (protocol / `www.` / trailing slash ignored), the database entry replaces the
+  built-in card instead of being shown twice.
+- **Hide & restore.** An owner signed in sees a violet ✕ on a built-in card:
+  it hides that site for every visitor (the id list is stored as a content
+  override, `site › hidden.sites`) and a **Restore hidden sites (n)** button
+  appears in the owner panel to bring them all back. Projects added from the
+  panel keep the ordinary delete ✕.
+
+To add, remove or reorder a site, edit the array in
+`public/js/views/sites.js` — the grid, the hero showcase and the counter all
+follow it. `test/sites.test.js` locks the list, the entry button, the
+de-duplication and the hide/restore flow in place (`npm test`).
+
 ## 🌍 Language
 
 The language is auto-detected from `navigator.language` on the first visit
@@ -46,8 +87,9 @@ switched with the EN / عربي toggle. The choice is stored in `localStorage`.
 ## 🔐 Owner login
 
 The **Owner** button in the navbar opens a sign-in dialog. When signed in, an
-owner panel appears in the *Our Work* section with the **Analyze & Add** bar and
-✕ buttons on every card.
+owner panel appears in the *Our Work* section with the **Analyze & Add** bar,
+✕ buttons on every card, and a **Restore hidden sites (n)** button whenever
+built-in sites have been hidden (see *The published sites* above).
 
 ### ✏️ Edit literally anything on the site
 
@@ -170,12 +212,14 @@ public/
   css/style.css           Light theme tokens, glass cubes, device frames, waves, intro, edit-mode styling
   js/views/shell.js       Page frame: intro, background, navigation, WhatsApp button, shared helpers
   js/views/sections.js    Hero, marquee, services, portfolio + owner panel, about, contact + footer
+  js/views/sites.js       The ten published sites: links, bilingual copy, previews, poster colour
   js/views/dialogs.js     Owner sign-in and project-editor dialogs
   js/parse.js             Shared metadata parser (browser + Node)
   js/app.js               Page mount, i18n, intro behaviour, device modes, portfolio, owner session, inline content editing
 test/
   owner.test.js           Owner flows, run against a JSDOM copy of the page
   views.test.js           Views: element ids, escaping, language, layout the stylesheet relies on
+  sites.test.js           Built-in sites: the list, entry buttons, de-duplication, hide & restore
   vercel-routing.test.js  API routing through the Vercel rewrite
 ```
 
