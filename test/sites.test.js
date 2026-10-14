@@ -19,7 +19,7 @@ const appJs = read('public/js/app.js');
 const reply = (data, status = 200) => ({ ok: status < 400, status, json: async () => data });
 const tick = () => new Promise((resolve) => setImmediate(resolve));
 
-/** The ten sites the studio published, as handed over by the owner. */
+/** The sites the studio published, as handed over by the owner. */
 const EXPECTED_HOSTS = [
   'ningawy.vercel.app',
   'muslim-wa-bas-ai-assistant-1.vercel.app',
@@ -31,6 +31,7 @@ const EXPECTED_HOSTS = [
   'souqi-944p.vercel.app',
   'nova-os-psi.vercel.app',
   'khallesa.vercel.app',
+  'kawkap-krakep.vercel.app',
 ];
 
 /** The list as first published, read back with no DOM at all. */

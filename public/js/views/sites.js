@@ -176,6 +176,19 @@
       favicon: 'https://khallesa.vercel.app/icons/favicon-32.png',
       accent: '#22c55e',
     },
+    {
+      id: 'site-kawkap',
+      url: 'https://kawkap-krakep.vercel.app/',
+      host: 'kawkap-krakep.vercel.app',
+      title: 'Kawkap Krakep — Sell What You No Longer Need',
+      titleAr: 'كوكب كراكيب — عندك كراكيب؟ حوّلها لقيمة',
+      description: 'A marketplace where people list the things they no longer need and others buy them — post an ad in a minute without signing up, and browse nearby listings on the map.',
+      descriptionAr: 'منصة تبيع فيها حاجاتك اللي مش محتاجها وتشتري غيرها — انشر إعلانك في دقيقة بدون تسجيل دخول، وتصفّح الكراكيب القريبة منك على الخريطة.',
+      image: shot('https://kawkap-krakep.vercel.app/'),
+      capture: true,
+      favicon: 'https://kawkap-krakep.vercel.app/brand/icon-512.png',
+      accent: '#d3ab5b',
+    },
   ];
 
   /** Frozen copy: the page reads this list, nobody mutates it. */

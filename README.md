@@ -22,7 +22,7 @@ node server.js          # → http://localhost:3000   (PORT env to change)
 | **Intro splash** | A short animated opener: particles converge, the letters **P I X E L I O** assemble in 3D with a light sweep, `STUDIO` spaces out, a gradient line draws, then a bar-wipe reveals the site. Skippable (button or `Esc`), plays once per browser session, disabled under `prefers-reduced-motion`. |
 | **Hero** | Headline, stats and a **floating device** that shows your published project screens (or an empty state until the first project is added). |
 | **The Flood (الطوفان)** | Animated wave layers + rising bubbles behind 12 service cards (graphic design + website design), each with an **Order service** WhatsApp button that surge up in a staggered cascade, followed by three counter-scrolling streams of keywords. |
-| **Our Work** | Every site is displayed **inside a floating device** — a phone on mobile, a laptop on desktop — with a gradient **Enter site / «دخول»** button (and a chip over the screen) that opens the live site in a new tab. The ten sites the studio published are built in (see below); the owner can add more from the owner panel. |
+| **Our Work** | Every site is displayed **inside a floating device** — a phone on mobile, a laptop on desktop — with a gradient **Enter site / «دخول»** button (and a chip over the screen) that opens the live site in a new tab. The sites the studio published are built in (see below); the owner can add more from the owner panel. |
 | **About / Contact** | Studio blurb, skill tags, and both phone lines with call / WhatsApp / copy actions, plus a floating WhatsApp button. |
 
 ## 📱 The device frame
@@ -39,12 +39,13 @@ their choice is remembered in `localStorage`. Switching animates the frame
 
 ## 🌐 The published sites (built-in portfolio)
 
-The ten sites the studio built ship **inside the page** — no database and no
+The sites the studio built ship **inside the page** — no database and no
 server needed, so they appear on every deploy:
 
 ```text
 ningawy · muslim-wa-bas-ai-assistant-1 · el-mona-akademe · montag-est ·
-yaseen868 · shoter-ork-geto · t-m-d-ai · souqi-944p · nova-os-psi · khallesa
+yaseen868 · shoter-ork-geto · t-m-d-ai · souqi-944p · nova-os-psi ·
+khallesa · kawkap-krakep
 ```
 
 They live in one editable list: **`public/js/views/sites.js`** (`PixelioViews.builtinSites`).
@@ -60,7 +61,7 @@ owner publishes from the owner panel:
   preview sits a **designed poster** (site colour + favicon + hostname) so a card
   looks right before — or instead of — the screenshot arriving.
 - **Counters.** The hero showcase and the “Projects” number follow the same list,
-  so the site shows *10 projects* out of the box.
+  so the site shows *11 projects* out of the box.
 - **Copy.** Titles, descriptions and the button label are bilingual
   (`title` / `titleAr`, `description` / `descriptionAr`, `card.enter`).
   Everything is inline-editable by the owner like the rest of the page.
@@ -212,7 +213,7 @@ public/
   css/style.css           Light theme tokens, glass cubes, device frames, waves, intro, edit-mode styling
   js/views/shell.js       Page frame: intro, background, navigation, WhatsApp button, shared helpers
   js/views/sections.js    Hero, marquee, services, portfolio + owner panel, about, contact + footer
-  js/views/sites.js       The ten published sites: links, bilingual copy, previews, poster colour
+  js/views/sites.js       The published sites: links, bilingual copy, previews, poster colour
   js/views/dialogs.js     Owner sign-in and project-editor dialogs
   js/parse.js             Shared metadata parser (browser + Node)
   js/app.js               Page mount, i18n, intro behaviour, device modes, portfolio, owner session, inline content editing
