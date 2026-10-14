@@ -67,6 +67,7 @@ const I18N = {
     'settings.devicePhone': 'Phone-view tooltip',
     'settings.deviceLaptop': 'Computer-view tooltip',
     'settings.cardRemove': '“Remove project” tooltip',
+    'settings.cardEnter': '“Enter site” button label',
     'settings.showcase': 'Custom hero showcase image',
 
     'hero.eyebrow': 'Pixelio — Creative Studio',
@@ -111,14 +112,18 @@ const I18N = {
 
     'work.kicker': 'Portfolio',
     'work.title': 'Websites we <span class="grad">built</span>',
-    'work.sub': 'Every project below is shown live inside a real device — tap any screen to open the site.',
+    'work.sub': 'Every site below is shown live inside a real device — press “Enter site” or tap any screen to open it.',
     'showcase.empty': 'Your published websites will appear here.',
     'form.placeholder': 'Paste a website link — e.g. https://yoursite.com',
     'form.btn': 'Analyze & Add',
     'form.btnLoading': 'Analyzing…',
     'form.hint': 'The site’s public data (title, description, image, favicon) is read automatically and turned into a card.',
     'card.visit': 'Visit',
+    'card.enter': 'Enter site',
     'card.remove': 'Remove this project',
+    'card.hide': 'Hide this site from the page (you can restore it later)',
+    'card.hidden': 'Site hidden — you can restore it any time.',
+    'owner.unhide': 'Restore hidden sites',
     'project.edit': 'Edit project',
     'project.editTitle': 'Edit project details',
     'project.editSub': 'Control the link, titles, descriptions and preview image.',
@@ -206,6 +211,7 @@ const I18N = {
     'settings.devicePhone': 'تلميح عرض الهاتف',
     'settings.deviceLaptop': 'تلميح عرض الكمبيوتر',
     'settings.cardRemove': 'تلميح "حذف المشروع"',
+    'settings.cardEnter': 'نص زر الدخول للموقع',
     'settings.showcase': 'صورة مخصصة لعرض الواجهة الرئيسية',
 
     'hero.eyebrow': 'Pixelio — استوديو إبداعي',
@@ -250,14 +256,18 @@ const I18N = {
 
     'work.kicker': 'أعمالنا',
     'work.title': 'مواقع <span class="grad">أنشأناها</span>',
-    'work.sub': 'كل مشروع معروض داخل جهاز حقيقي — اضغط على أي شاشة لفتح الموقع.',
+    'work.sub': 'كل موقع معروض داخل جهاز حقيقي — اضغط زر «دخول» أو على أي شاشة لفتح الموقع.',
     'showcase.empty': 'ستظهر مواقعك المنشورة هنا.',
     'form.placeholder': 'الصق رابط موقع — مثال: https://yoursite.com',
     'form.btn': 'تحليل وإضافة',
     'form.btnLoading': 'جارٍ التحليل…',
     'form.hint': 'تُقرأ بيانات الموقع العامة (العنوان، الوصف، الصورة، الأيقونة) تلقائياً وتتحول إلى بطاقة.',
     'card.visit': 'زيارة',
+    'card.enter': 'دخول',
     'card.remove': 'حذف هذا المشروع',
+    'card.hide': 'إخفاء هذا الموقع من الصفحة (يمكنك استرجاعه لاحقاً)',
+    'card.hidden': 'تم إخفاء الموقع — يمكنك استرجاعه في أي وقت.',
+    'owner.unhide': 'استرجاع المواقع المخفية',
     'project.edit': 'تعديل المشروع',
     'project.editTitle': 'تعديل كل تفاصيل المشروع',
     'project.editSub': 'تحكم في الرابط والعناوين والوصف وصورة المعاينة.',
@@ -373,8 +383,67 @@ function effectiveShowcase() {
   const custom = Array.from({ length: SHOWCASE_SLOTS }, (_, i) =>
     ov('site', `showcase.${i}`) || DEFAULT_SHOWCASE[i],
   ).filter(Boolean);
-  if (custom.length) return custom;
-  return projects.filter((project) => project && project.image).slice(0, 4).map((project) => project.image);
+  if (custom.length) return custom.map((src) => ({ src, cover: false }));
+  return visibleProjects()
+    .filter((project) => project && project.image)
+    .slice(0, 4)
+    .map((project) => ({
+      src: project.image,
+      cover: Boolean(project.cover),
+      url: project.url,
+      title: projTitle(project),
+      capture: project.capture,
+      poster: posterMarkup(project),
+    }));
+}
+
+/* --------------------------- built-in portfolio -----------------------------
+ * The studio's own sites (views/sites.js) are part of the portfolio for every
+ * visitor — no database row needed, so they survive any deploy. An owner-added
+ * project with the same link replaces its built-in twin (a site can be moved
+ * into the database without showing up twice), and the owner can hide a
+ * built-in card; the hidden ids are stored with the rest of the editable
+ * content, so the choice is remembered and reaches every visitor.
+ * --------------------------------------------------------------------------- */
+
+function builtinSites() {
+  const list = window.PixelioViews && window.PixelioViews.builtinSites;
+  return Array.isArray(list) ? list : [];
+}
+
+/** Link identity for de-duplication: ignores protocol, `www.` and a trailing slash. */
+function linkKey(url) {
+  return String(url || '')
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, '')
+    .replace(/^www\./, '')
+    .replace(/\/+$/, '');
+}
+
+function hiddenSiteIds() {
+  const raw = ov('site', 'hidden.sites');
+  if (raw === undefined || raw === null || raw === '') return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed.map(String).filter(Boolean);
+  } catch { /* not JSON — accept a plain comma-separated list too */ }
+  return String(raw).split(',').map((s) => s.trim()).filter(Boolean);
+}
+
+function hiddenSiteCount() {
+  const known = new Set(builtinSites().map((s) => s.id));
+  return hiddenSiteIds().filter((id) => known.has(id)).length;
+}
+
+/** Everything the “Our Work” grid and the hero showcase display: the owner's
+ *  published projects first, then every built-in site that is neither hidden
+ *  nor already published by the owner. */
+function visibleProjects() {
+  const published = new Set(projects.map((p) => linkKey(p.url)));
+  const hidden = new Set(hiddenSiteIds());
+  const rest = builtinSites().filter((site) => !hidden.has(site.id) && !published.has(linkKey(site.url)));
+  return [...projects, ...rest];
 }
 
 async function fetchContent() {
@@ -804,7 +873,9 @@ function buildShowcase() {
   if (!stack || !dots) return;
   const shots = effectiveShowcase();
   const emptyText = t('showcase.empty');
-  const nextKey = shots.length ? shots.join('|') : `empty:${emptyText}`;
+  const nextKey = shots.length
+    ? shots.map((s) => `${s.cover ? 'cover' : 'pan'}:${s.src}:${s.url || ''}:${s.title || ''}`).join('|')
+    : `empty:${emptyText}`;
   if (nextKey === lastShowcaseKey) return;
   lastShowcaseKey = nextKey;
 
@@ -819,7 +890,14 @@ function buildShowcase() {
   }
 
   stack.innerHTML = shots
-    .map((src, i) => `<div class="shot${i === 0 ? ' active' : ''}"><img src="${esc(src)}" alt="" decoding="async" loading="${i === 0 ? 'eager' : 'lazy'}"></div>`)
+    .map((shot, i) => {
+      const inner = `${shot.poster || ''}<img src="${esc(shot.src)}" alt="${esc(shot.title || '')}" decoding="async" loading="${i === 0 ? 'eager' : 'lazy'}"${captureGuard(shot)} onerror="this.remove()">`;
+      const cls = `shot${shot.cover ? ' cover' : ''}${i === 0 ? ' active' : ''}`;
+      // A screen that belongs to a portfolio entry is itself a way into the site.
+      return shot.url
+        ? `<a class="${cls}" href="${esc(shot.url)}" target="_blank" rel="noopener" aria-label="${esc(shot.title || '')}">${inner}</a>`
+        : `<div class="${cls}">${inner}</div>`;
+    })
     .join('');
   dots.hidden = false;
   dots.innerHTML = shots
@@ -859,18 +937,43 @@ function projDesc(p) {
   return (lang === 'ar' && p.descriptionAr) ? p.descriptionAr : (p.description || '');
 }
 
-function cardTemplate(p, index) {
+/** A live-capture service answers with a small “generating…” placeholder while
+ *  it renders a page for the first time. Dropping such an image leaves the
+ *  designed poster visible instead of a grey box. */
+function captureGuard(p) {
+  return p.capture ? ' onload="if (this.naturalWidth < 600 || this.naturalHeight < 600) this.remove()"' : '';
+}
+
+/** The designed poster that sits behind every preview: what a visitor sees
+ *  before the screenshot arrives — and instead of it if it never does. */
+function posterMarkup(p) {
   const initial = esc(((p.host || p.title || '•')[0] || '•').toUpperCase());
-  const media = p.image
-    ? `<div class="shot"><img src="${esc(p.image)}" alt="${esc(projTitle(p))}" decoding="async" loading="lazy"
-         onerror="this.parentElement.innerHTML='<div class=&quot;shot-fallback&quot;>${initial}</div>'"></div>`
-    : `<div class="shot"><div class="shot-fallback">${initial}</div></div>`;
+  const accent = /^#[0-9a-f]{3,8}$/i.test(String(p.accent || '')) ? p.accent : '';
+  return `
+          <div class="shot-poster"${accent ? ` style="--poster:${esc(accent)}"` : ''}>
+            ${p.favicon
+              ? `<img class="poster-icon" src="${esc(p.favicon)}" alt="" decoding="async" loading="lazy" onerror="this.remove()">`
+              : `<span class="poster-letter">${initial}</span>`}
+            <strong class="poster-title">${esc(projTitle(p))}</strong>
+            <span class="poster-host" dir="ltr">${esc(p.host || '')}</span>
+          </div>`;
+}
+
+function cardTemplate(p, index) {
+  const enterLabel = esc(t('card.enter'));
+  const media = `<div class="shot${p.cover ? ' cover' : ''}">${posterMarkup(p)}${p.image
+    ? `<img class="shot-img" src="${esc(p.image)}" alt="${esc(projTitle(p))}" decoding="async" loading="lazy"${captureGuard(p)} onerror="this.remove()">`
+    : ''}</div>`;
 
   const fav = p.favicon ? `<img src="${esc(p.favicon)}" alt="" decoding="async" loading="lazy" onerror="this.remove()">` : '';
+  const isBuiltin = Boolean(p.builtin);
+  const admin = isOwner
+    ? `<div class="project-admin-actions">${isBuiltin ? '' : `<button class="btn-project-edit" type="button" title="${esc(t('project.edit'))}" aria-label="${esc(t('project.edit'))}">✎</button>`}<button class="btn-remove${isBuiltin ? ' btn-hide-site' : ''}" type="button" title="${esc(t(isBuiltin ? 'card.hide' : 'card.remove'))}" aria-label="${esc(t(isBuiltin ? 'card.hide' : 'card.remove'))}">✕</button></div>`
+    : '';
 
   return `
-  <article class="work-card" data-id="${esc(p.id)}" style="--rd:${Math.min(index * 80, 480)}ms">
-    ${isOwner ? `<div class="project-admin-actions"><button class="btn-project-edit" type="button" title="${esc(t('project.edit'))}" aria-label="${esc(t('project.edit'))}">✎</button><button class="btn-remove" type="button" title="${esc(t('card.remove'))}" aria-label="${esc(t('card.remove'))}">✕</button></div>` : ''}
+  <article class="work-card${isBuiltin ? ' is-builtin' : ''}" data-id="${esc(p.id)}"${isBuiltin ? ' data-builtin="1"' : ''} style="--rd:${Math.min(index * 80, 480)}ms">
+    ${admin}
     <div class="device float" data-mode="${deviceMode}">
       <div class="device-glow" aria-hidden="true"></div>
       <div class="device-body">
@@ -878,6 +981,7 @@ function cardTemplate(p, index) {
         <span class="cam" aria-hidden="true"></span>
         <a class="device-screen" href="${esc(p.url)}" target="_blank" rel="noopener" aria-label="${esc(projTitle(p))}">
           <div class="screen-stack">${media}</div>
+          <span class="screen-enter" aria-hidden="true"><span data-i18n="card.enter" data-no-edit>${enterLabel}</span><span aria-hidden="true">↗</span></span>
           <span class="screen-shine" aria-hidden="true"></span>
         </a>
       </div>
@@ -889,7 +993,10 @@ function cardTemplate(p, index) {
       ${projDesc(p) ? `<p class="work-desc">${esc(projDesc(p))}</p>` : ''}
       <div class="work-meta">
         <span class="work-host" dir="ltr">${fav}${esc(p.host || '')}</span>
-        <a class="btn-visit" href="${esc(p.url)}" target="_blank" rel="noopener"><span data-i18n="card.visit">${esc(t('card.visit'))}</span> <span aria-hidden="true">↗</span></a>
+        <a class="btn-enter" href="${esc(p.url)}" target="_blank" rel="noopener" title="${esc(projTitle(p))}">
+          <span data-i18n="card.enter">${enterLabel}</span>
+          <span class="btn-enter-arrow" aria-hidden="true">↗</span>
+        </a>
       </div>
     </div>
   </article>`;
@@ -899,9 +1006,11 @@ function renderGrid() {
   const grid = $('#grid');
   const empty = $('#empty');
   if (!grid) return;
-  grid.innerHTML = projects.map(cardTemplate).join('');
-  if (empty) empty.hidden = projects.length > 0;
+  const list = visibleProjects();
+  grid.innerHTML = list.map(cardTemplate).join('');
+  if (empty) empty.hidden = list.length > 0;
   buildShowcase();
+  updateOwnerPanelActions();
   observeReveals();
   updateStatCount(true);
 }
@@ -922,7 +1031,7 @@ async function loadProjects() {
 function updateStatCount(animate = true) {
   const el = $('#stat-projects');
   if (!el) return;
-  const target = projects.length;
+  const target = visibleProjects().length;
   if (!animate) { el.textContent = String(target); return; }
   const start = parseInt(el.textContent, 10) || 0;
   if (start === target) { el.textContent = String(target); return; }
@@ -1120,6 +1229,42 @@ async function removeProject(id) {
   }
 }
 
+/* --------------------- hiding / restoring built-in sites --------------------
+ * Built-in cards come from views/sites.js, not from the database, so they are
+ * not deleted — the owner hides one and the id is remembered as an editable
+ * content override (site › hidden.sites), which can be reverted in one click.
+ * --------------------------------------------------------------------------- */
+
+async function hideBuiltinSite(id) {
+  try {
+    const next = Array.from(new Set([...hiddenSiteIds(), String(id)]));
+    await saveContent('site', 'hidden.sites', JSON.stringify(next));
+    renderGrid();
+    toast(t('card.hidden'), 'success');
+  } catch {
+    toast(t('owner.savefail'), 'error');
+  }
+}
+
+async function restoreHiddenSites() {
+  try {
+    await resetContent('site', 'hidden.sites');
+    renderGrid();
+    toast(t('owner.reset'), 'success');
+  } catch {
+    toast(t('owner.resetfail'), 'error');
+  }
+}
+
+/** Keeps the owner panel in step with what is on the page right now. */
+function updateOwnerPanelActions() {
+  const btn = $('#unhide-sites-btn');
+  if (!btn) return;
+  const count = hiddenSiteCount();
+  btn.hidden = !isOwner || count === 0;
+  btn.textContent = `${t('owner.unhide')} (${count})`;
+}
+
 /* ======================================================================
    OWNER — INLINE CONTENT EDITING
    Every visible word on the page (headings, list items, contact numbers,
@@ -1254,7 +1399,8 @@ function syncAfterContentChange(path) {
   if (path.startsWith('services.')) refreshServiceOrderLinks();
   if (path.startsWith('showcase.')) buildShowcase();
   applyAttributeBindings();
-  if (path === 'card.remove' || path === 'card.visit') renderGrid();
+  if (path === 'card.remove' || path === 'card.visit' || path === 'card.enter') renderGrid();
+  if (path === 'hidden.sites') renderGrid();
 }
 
 function refreshEditables() {
@@ -1289,6 +1435,7 @@ const SETTINGS_FIELDS = () => ([
   { scope: lang, path: 'device.phone', label: t('settings.devicePhone'), kind: 'text' },
   { scope: lang, path: 'device.laptop', label: t('settings.deviceLaptop'), kind: 'text' },
   { scope: lang, path: 'card.remove', label: t('settings.cardRemove'), kind: 'text' },
+  { scope: lang, path: 'card.enter', label: t('settings.cardEnter'), kind: 'text' },
   { scope: 'site', path: 'contacts.0.display', label: t('settings.contact1'), kind: 'text', dir: 'ltr' },
   { scope: 'site', path: 'contacts.1.display', label: t('settings.contact2'), kind: 'text', dir: 'ltr' },
   { scope: 'site', path: 'showcase.0', label: `${t('settings.showcase')} 1`, kind: 'text', dir: 'ltr' },
@@ -1369,6 +1516,7 @@ function setOwner(value, { quiet = false } = {}) {
   $('#owner-btn-label').textContent = value ? t('owner.signedIn').split('—')[0].trim() : t('owner.btn');
   if (value) buildOwnerSettings();
   if (!value) setEditMode(false);
+  updateOwnerPanelActions();
   if (changed && !quiet) renderGrid();
 }
 
@@ -1630,8 +1778,16 @@ function bindEvents() {
     const removeBtn = e.target.closest('.btn-remove');
     const card = e.target.closest('.work-card');
     if (editBtn && card) { e.preventDefault(); openProjectEditor(card.dataset.id); }
-    if (removeBtn && card) { e.preventDefault(); removeProject(card.dataset.id); }
+    if (removeBtn && card) {
+      e.preventDefault();
+      // Built-in cards are hidden (reversibly), database cards are deleted.
+      if (card.dataset.builtin) hideBuiltinSite(card.dataset.id);
+      else removeProject(card.dataset.id);
+    }
   });
+
+  // bring back every built-in site the owner has hidden
+  $('#unhide-sites-btn').addEventListener('click', restoreHiddenSites);
   $('#project-edit-form').addEventListener('submit', (e) => { e.preventDefault(); saveProjectDetails(); });
   $$('#project-modal [data-project-close]').forEach((el) => el.addEventListener('click', closeProjectEditor));
   document.addEventListener('keydown', (e) => {

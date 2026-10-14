@@ -709,6 +709,9 @@ html[dir="rtl"] .btn:hover .btn-arrow { transform: scaleX(-1) translateX(4px); }
   overflow: hidden;
 }
 .shot.active { opacity: 1; transform: scale(1); }
+/* the hero screens keep a dark surface behind a preview that is still loading
+   (or that never arrives, e.g. a capture service that is still generating) */
+#hero-stack .shot { background: linear-gradient(155deg, #16294c, #0a1428 62%, #050b18); }
 .shot img {
   position: absolute;
   top: 0; left: 0;
@@ -719,6 +722,86 @@ html[dir="rtl"] .btn:hover .btn-arrow { transform: scaleX(-1) translateX(4px); }
 .device[data-mode="phone"] .shot img { animation-name: panPhone; }
 @keyframes pan      { from { transform: translateY(0); } to { transform: translateY(-68%); } }
 @keyframes panPhone { from { transform: translateY(0); } to { transform: translateY(-8%); } }
+
+/* A “cover” preview fills the whole screen instead of being a very long
+   screenshot that pans. Used by the studio's own sites (views/sites.js),
+   whose previews are hero / Open Graph images rather than page captures. */
+.device .shot.cover img,
+.shot.cover img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: top center;
+  animation: none;
+}
+
+/* The designed poster behind every preview: shown while a screenshot is
+   loading, and kept if the preview never arrives, so a card never looks
+   broken. The site's own colour comes in as --poster. */
+.shot-poster {
+  position: absolute; inset: 0;
+  display: grid; place-content: center; justify-items: center; gap: 10px;
+  padding: 20px;
+  text-align: center;
+  color: #fff;
+  background: linear-gradient(155deg, #16294c, #0a1428 62%, #050b18);
+}
+.shot-poster::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 50% 18%, var(--poster, #168cff), transparent 66%);
+  opacity: .55;
+}
+.shot-poster > * { position: relative; }
+.poster-icon {
+  width: 54px; height: 54px;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, .08);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .45);
+}
+.poster-letter {
+  font-family: 'Space Grotesk', var(--font-en);
+  font-size: 46px; font-weight: 700;
+  color: rgba(255, 255, 255, .82);
+}
+.poster-title {
+  max-width: 94%;
+  font-size: 13px; font-weight: 700; line-height: 1.45;
+  color: rgba(255, 255, 255, .95);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.poster-host {
+  font-size: 11px;
+  letter-spacing: .01em;
+  color: rgba(255, 255, 255, .68);
+  word-break: break-all;
+}
+@media (max-width: 640px) { .poster-title { font-size: 15px; } }
+
+/* “Enter site” chip that surfaces over the screen of a portfolio card */
+.screen-enter {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 16px;
+  width: max-content; max-width: 84%;
+  margin: 0 auto;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 15px;
+  font-size: 12px; font-weight: 700;
+  color: #fff;
+  background: rgba(9, 18, 36, .66);
+  border: 1px solid rgba(255, 255, 255, .3);
+  border-radius: 999px;
+  backdrop-filter: blur(7px);
+  opacity: 0;
+  transform: translateY(9px);
+  transition: opacity .35s var(--ease), transform .35s var(--ease);
+  pointer-events: none;
+  z-index: 3;
+}
+.work-card:hover .screen-enter,
+.work-card:focus-within .screen-enter { opacity: 1; transform: none; }
+@media (hover: none) { .screen-enter { opacity: 1; transform: none; } }
 
 .screen-shine {
   position: absolute; inset: 0;
@@ -1103,6 +1186,24 @@ body.owner-editing [contenteditable="true"]:focus {
   transition: transform .3s var(--ease), box-shadow .3s;
 }
 .btn-visit:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(108, 59, 255, .28); }
+
+/* The way into a portfolio site — the primary action on every card */
+.btn-enter {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 24px;
+  font-size: 14px; font-weight: 700;
+  color: #fff;
+  background: var(--grad);
+  border-radius: 999px;
+  box-shadow: 0 10px 26px rgba(108, 59, 255, .26);
+  transition: transform .3s var(--ease), box-shadow .3s var(--ease);
+}
+.btn-enter:hover { transform: translateY(-2px); box-shadow: 0 16px 34px rgba(108, 59, 255, .36); }
+.btn-enter:active { transform: translateY(0); }
+.btn-enter-arrow { display: inline-block; transition: transform .3s var(--ease); }
+.btn-enter:hover .btn-enter-arrow { transform: translate(2px, -2px); }
+@media (max-width: 420px) { .btn-enter { width: 100%; justify-content: center; } }
+
 .btn-remove {
   position: absolute;
   top: -6px; inset-inline-end: 6px;
@@ -1120,6 +1221,10 @@ body.owner-editing [contenteditable="true"]:focus {
 }
 .work-card:hover .btn-remove, .btn-remove:focus-visible { opacity: 1; transform: scale(1); }
 .btn-remove:hover { background: #ef4444; color: #fff; }
+/* the ✕ on a built-in card hides (and can restore) it instead of deleting —
+   declared after .btn-remove so the violet wins on equal specificity */
+.btn-hide-site { color: #6c3bff; border-color: rgba(108, 59, 255, .38); }
+.btn-hide-site:hover { background: #6c3bff; color: #fff; }
 .project-admin-actions { position: absolute; top: -8px; inset-inline-end: 4px; z-index: 12; display: flex; gap: 7px; transform: translateZ(60px); }
 .project-admin-actions .btn-remove { position: static; opacity: 1; transform: none; }
 .btn-project-edit {
@@ -1135,6 +1240,7 @@ body.owner-editing [contenteditable="true"]:focus {
 .project-fields textarea { width: 100%; min-height: 90px; padding: 12px 14px; resize: vertical; color: var(--ink); font: inherit; font-size: 16px; border: 1px solid var(--line-2); border-radius: 12px; background: #fff; outline: none; }
 .project-fields textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 4px rgba(22,140,255,.12); }
 @media (max-width: 620px) { .project-fields { grid-template-columns: 1fr; } .project-fields .field-wide { grid-column: auto; } }
+/* kept for older cached markup that still asks for the flat fallback */
 .shot-fallback {
   position: absolute; inset: 0;
   display: grid; place-items: center;

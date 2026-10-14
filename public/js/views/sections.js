@@ -162,6 +162,7 @@
       <span class="owner-chip"><span class="owner-live" aria-hidden="true"></span><span data-i18n="owner.signedIn">${txt(ctx, 'owner.signedIn')}</span></span>
       <div class="owner-panel-actions">
         <button class="btn-mini btn-edit-toggle" type="button" id="edit-toggle-btn" data-i18n="owner.editOn" data-no-edit>${txt(ctx, 'owner.editOn')}</button>
+        <button class="btn-mini btn-unhide" type="button" id="unhide-sites-btn" hidden data-no-edit title="${txt(ctx, 'owner.unhide')}">${txt(ctx, 'owner.unhide')}</button>
         <button class="btn-mini" type="button" id="logout-btn" data-i18n="owner.logout" data-no-edit>${txt(ctx, 'owner.logout')}</button>
       </div>
     </div>
