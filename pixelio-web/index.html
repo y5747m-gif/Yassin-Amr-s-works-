@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#FCFCF9" />
+    <title>pixelio — Websites built with pixels &amp; purpose.</title>
+    <meta
+      name="description"
+      content="pixelio is a small web design studio crafting high-converting, fast, and beautiful websites for startups and brands. From idea to launch in 7 days."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Tajawal:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      /* Set language, direction and theme before first paint (no flash).
+         Values are written by src/lib/i18n.tsx and src/lib/theme.tsx through
+         useLocalStorage, so they may arrive JSON-quoted — strip the quotes. */
+      (function () {
+        function read(key) {
+          try {
+            var value = localStorage.getItem(key);
+            return value === null ? null : value.replace(/^"|"$/g, '');
+          } catch (e) {
+            return null;
+          }
+        }
+        try {
+          var root = document.documentElement;
+          var lang = read('pixelio-lang') || ((navigator.language || 'en').toLowerCase().indexOf('ar') === 0 ? 'ar' : 'en');
+          root.lang = lang;
+          root.dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+          var theme = read('pixelio-theme');
+          var dark = theme === 'dark' || ((!theme || theme === 'system') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          root.classList.toggle('dark', dark);
+
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', dark ? '#0A0A0A' : '#FCFCF9');
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

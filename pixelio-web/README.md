@@ -1,53 +1,68 @@
-# pixelio — studio website
+# pixelio — web app
 
-Portfolio site for **pixelio**, a web design studio. *"We build websites that convert."*
+Single-page site for **pixelio**, built on the exact stack configured here:
 
-Stack: Next.js 14 (App Router) · TypeScript · Tailwind CSS · shadcn-style UI primitives (Radix) ·
-Framer Motion · Lenis smooth scroll · Lucide icons · next-themes · Fontsource (Inter, Tajawal).
+| Layer      | Version                          |
+| ---------- | -------------------------------- |
+| React      | 19.2                             |
+| Vite       | 7.3                              |
+| Tailwind   | 4.1 (`@tailwindcss/vite`, no config file) |
+| TypeScript | 5.9 (`strict`, `noUnusedLocals`) |
+| Icons      | lucide-react                     |
+| Class merge| clsx + tailwind-merge (`cn`)     |
+
+This app **replaces the previous Next.js app** that lived in this folder. Its
+content was carried over, not thrown away: the bilingual copy
+(`src/lib/messages.ts`), the case-study data (`src/lib/projects.ts`), the shared
+easings (`src/lib/motion.ts`), the portfolio images (`public/work/*.jpg`), the
+favicon (`public/icon.svg`) and the old design tokens
+(`docs/legacy-globals.css`, now expressed as Tailwind 4 theme tokens in
+`src/index.css`).
+
+## Commands
 
 ```bash
 npm install
-npm run dev        # http://localhost:3000
-npm run build && npm start
-npm run lint && npm run typecheck
+npm run dev       # http://localhost:5173  (binds 0.0.0.0, any host allowed)
+npm run build     # → dist/index.html, everything inlined by vite-plugin-singlefile
+npm run preview   # serve the production build
+npx tsc --noEmit  # typecheck
 ```
 
-## What's on the page
+## What is already wired
 
-| Section | Notes |
-|---|---|
-| Navbar | Floating glass pill, `pixelio` wordmark with a vermilion pixel on both i's, Work / Services / About / Contact, EN ⇄ عربي, light/dark toggle, magnetic "Start a Project →" CTA. Mobile sheet menu. |
-| Hero | Headline + subtext, two floating project previews with scroll parallax, pointer parallax and a slow float loop. |
-| Marquee | Infinite strip of studio capabilities. |
-| Work | Six projects in a masonry grid. Each card: image, client, type, year. Click opens an animated case-study dialog (challenge, outcome, results, CTA). |
-| Services | "From idea to launch in 7 days", four services, and a 7-day timeline built from pixel cells. |
-| About | "We don't just design pixels, we design business growth." Stats and team roles. |
-| Contact | "Have an idea? Let's build it." Form with validation and budget chips, plus hello@pixelio.studio. |
-| Footer | Minimal, © 2026 pixelio. |
+- **Language (en / ar) + RTL** — `src/lib/i18n.ts`. `LanguageProvider` sets
+  `lang`/`dir` on `<html>`, persists the choice, exposes the whole copy tree as
+  `t`, and gives `tr({ en, ar })` for localized fields. Arabic automatically
+  switches to Tajawal and drops letter-spacing (`src/index.css`).
+- **Theme (light / dark / system)** — `src/lib/theme.ts`. Toggles `.dark` on
+  `<html>`, follows the OS when set to *system*, and updates
+  `<meta name="theme-color">`.
+- **No flash on load** — `index.html` applies language, direction and theme
+  before first paint.
+- **Tokens** — background / foreground / card / muted / border / input / ring /
+  primary / secondary / destructive / brand, plus `rounded-4xl`,
+  `tracking-tightest`, `ease-out-expo` and the `marquee` / `grain` /
+  `pixel-float` animations. Use them as normal utilities (`bg-card`,
+  `text-muted-foreground`, `border-border`).
+- **Surface helpers** — `.bg-grid`, `.grain`, `.glass`, `.eyebrow`,
+  `.pixel-dot`, `.link-underline`, `.marquee` (RTL-aware).
+- **Primitives** — `components/ui`: button (6 variants × 4 sizes), input,
+  textarea, label, card. `components/layout`: container, section, language
+  toggle, theme toggle.
+- **Hooks** — `useLocalStorage`, `useMediaQuery`, `useReducedMotion`.
+- **Alias** — `@/*` → `src/*`.
 
-Design system: `#FCFCF9` / `#111111` in light mode, `#0A0A0A` in dark, `rounded-[24px]` cards,
-soft grid background, fixed film grain, one vermilion accent (`--brand`). All colours live as CSS
-variables in `app/globals.css`.
+## Where the site goes
 
-Motion: Lenis smooth scrolling, scroll-triggered fades with blur, word-by-word headline reveals,
-magnetic buttons, and spring-based hover states. Everything respects `prefers-reduced-motion`.
+`src/App.tsx` is currently a foundation screen (tokens, typography, structure).
+Site sections belong in `src/components/site/`, composed into a page like:
 
-## Where to edit
+```tsx
+<Container>
+  <Section id="work">…</Section>
+</Container>
+```
 
-- **Copy (EN + AR):** `lib/messages.ts`
-- **Projects / case studies:** `lib/projects.ts` (images in `public/work/`)
-- **Colours, grid, grain:** `app/globals.css`, `tailwind.config.ts`
-- **Contact form delivery:** `app/api/contact/route.ts` — validation is in place; `deliver()` is the single
-  seam where you connect an email provider (Resend, Postmark, SMTP) or a CRM. Until then, submissions
-  are validated and acknowledged but not sent anywhere.
-
-## Placeholder content — replace before launch
-
-- Client names, project metrics, testimonials-style numbers and team stats are **illustrative**.
-- Project images in `public/work/` are AI-generated concept mockups, not real client work.
-- The contact email `hello@pixelio.studio` and the domain `pixelio.studio` should be set up on your side.
-
-## Deploying
-
-Deploy `pixelio-web/` as its own project (e.g. Vercel with **Root Directory = `pixelio-web`**).
-Set `metadataBase` in `app/layout.tsx` if the production domain changes.
+Everything is RTL-safe: prefer logical utilities (`ps-*`, `pe-*`, `ms-*`,
+`me-*`, `start-*`, `end-*`, `text-start`) over `pl-*` / `left-*`.

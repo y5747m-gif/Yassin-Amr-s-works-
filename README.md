@@ -217,12 +217,32 @@ public/
   js/views/dialogs.js     Owner sign-in and project-editor dialogs
   js/parse.js             Shared metadata parser (browser + Node)
   js/app.js               Page mount, i18n, intro behaviour, device modes, portfolio, owner session, inline content editing
+pixelio-web/              React 19 + Vite 7 + Tailwind 4 app (see its own README)
 test/
   owner.test.js           Owner flows, run against a JSDOM copy of the page
   views.test.js           Views: element ids, escaping, language, layout the stylesheet relies on
   sites.test.js           Built-in sites: the list, entry buttons, de-duplication, hide & restore
   vercel-routing.test.js  API routing through the Vercel rewrite
 ```
+
+## ⚛️ pixelio-web — the React app
+
+`pixelio-web/` is the front-end app: **React 19 + Vite 7 + Tailwind CSS 4 +
+TypeScript (strict)**. It replaced the Next.js app that used to live there; that
+app's content was kept — the bilingual copy (`src/lib/messages.ts`), the
+case-study data (`src/lib/projects.ts`), the portfolio images
+(`public/work/*.jpg`) and its design tokens (now Tailwind 4 theme tokens in
+`src/index.css`).
+
+```bash
+cd pixelio-web && npm install && npm run dev   # → http://localhost:5173
+```
+
+Already wired: en/ar language + RTL (`src/lib/i18n.ts`), light/dark/system theme
+(`src/lib/theme.ts`), no-flash boot in `index.html`, UI primitives
+(`components/ui`), layout helpers (`components/layout`) and hooks
+(`src/hooks`). Sections go in `src/components/site/`. Details in
+[`pixelio-web/README.md`](pixelio-web/README.md).
 
 ## 📞 Contact
 
