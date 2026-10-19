@@ -1,13 +1,12 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
-import { Providers } from '@/components/providers';
 import './index.css';
 
-createRoot(document.getElementById('root')!).render(
+/* `#app { display: contents }` in styles/pixelio.css keeps every section a
+   layout child of <body>, exactly like the original page. */
+createRoot(document.getElementById('app')!).render(
   <StrictMode>
-    <Providers>
-      <App />
-    </Providers>
+    <App />
   </StrictMode>,
 );

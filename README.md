@@ -225,23 +225,32 @@ test/
   vercel-routing.test.js  API routing through the Vercel rewrite
 ```
 
-## ⚛️ pixelio-web — the React app
+## ⚛️ pixelio-web — the same site in React
 
-`pixelio-web/` is the front-end app: **React 19 + Vite 7 + Tailwind CSS 4 +
-TypeScript (strict)**. It replaced the Next.js app that used to live there; that
-app's content was kept — the bilingual copy (`src/lib/messages.ts`), the
-case-study data (`src/lib/projects.ts`), the portfolio images
-(`public/work/*.jpg`) and its design tokens (now Tailwind 4 theme tokens in
-`src/index.css`).
+`pixelio-web/` is a **faithful React port of this page**: React 19 + Vite 7 +
+Tailwind CSS 4 + TypeScript (strict). It replaced the Next.js app that used to
+live in that folder.
+
+Nothing about the look was redesigned — `public/css/style.css` is copied
+verbatim to `src/styles/pixelio.css`, the `<head>` (fonts, metadata, favicon and
+the pre-paint language/intro/`perf-lite` script) is the same, the `I18N`
+dictionary, `DEFAULT_CONTACTS`, `SVC_ICONS` and the built-in site list were
+extracted verbatim, and every section renders the same elements, ids, classes
+and `data-*` hooks the stylesheet relies on. The behaviour came across too: the
+intro splash with its particle canvas, the bilingual switch and RTL, the
+phone/laptop device frames, the hero showcase carousel, the flood (waves,
+bubbles, 12 service cards, keyword streams), the portfolio with its designed
+posters and `mShots` previews, the owner panel (add a site by URL, inline
+`contenteditable` editing, hide/restore built-ins, settings), both dialogs, the
+reveal/tilt/parallax motion and the `perf-lite` guards.
 
 ```bash
-cd pixelio-web && npm install && npm run dev   # → http://localhost:5173
+node server.js                                  # API + the vanilla page (:3000)
+cd pixelio-web && npm install && npm run dev     # the React app (:5173, /api proxied)
+npm run test:render                             # build + render in jsdom, 66 structure checks
 ```
 
-Already wired: en/ar language + RTL (`src/lib/i18n.ts`), light/dark/system theme
-(`src/lib/theme.ts`), no-flash boot in `index.html`, UI primitives
-(`components/ui`), layout helpers (`components/layout`) and hooks
-(`src/hooks`). Sections go in `src/components/site/`. Details in
+Where each piece of `public/js/app.js` went, and how to run it, is documented in
 [`pixelio-web/README.md`](pixelio-web/README.md).
 
 ## 📞 Contact
