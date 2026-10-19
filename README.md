@@ -217,12 +217,41 @@ public/
   js/views/dialogs.js     Owner sign-in and project-editor dialogs
   js/parse.js             Shared metadata parser (browser + Node)
   js/app.js               Page mount, i18n, intro behaviour, device modes, portfolio, owner session, inline content editing
+pixelio-web/              React 19 + Vite 7 + Tailwind 4 app (see its own README)
 test/
   owner.test.js           Owner flows, run against a JSDOM copy of the page
   views.test.js           Views: element ids, escaping, language, layout the stylesheet relies on
   sites.test.js           Built-in sites: the list, entry buttons, de-duplication, hide & restore
   vercel-routing.test.js  API routing through the Vercel rewrite
 ```
+
+## ⚛️ pixelio-web — the same site in React
+
+`pixelio-web/` is a **faithful React port of this page**: React 19 + Vite 7 +
+Tailwind CSS 4 + TypeScript (strict). It replaced the Next.js app that used to
+live in that folder.
+
+Nothing about the look was redesigned — `public/css/style.css` is copied
+verbatim to `src/styles/pixelio.css`, the `<head>` (fonts, metadata, favicon and
+the pre-paint language/intro/`perf-lite` script) is the same, the `I18N`
+dictionary, `DEFAULT_CONTACTS`, `SVC_ICONS` and the built-in site list were
+extracted verbatim, and every section renders the same elements, ids, classes
+and `data-*` hooks the stylesheet relies on. The behaviour came across too: the
+intro splash with its particle canvas, the bilingual switch and RTL, the
+phone/laptop device frames, the hero showcase carousel, the flood (waves,
+bubbles, 12 service cards, keyword streams), the portfolio with its designed
+posters and `mShots` previews, the owner panel (add a site by URL, inline
+`contenteditable` editing, hide/restore built-ins, settings), both dialogs, the
+reveal/tilt/parallax motion and the `perf-lite` guards.
+
+```bash
+node server.js                                  # API + the vanilla page (:3000)
+cd pixelio-web && npm install && npm run dev     # the React app (:5173, /api proxied)
+npm run test:render                             # build + render in jsdom, 70 structure checks
+```
+
+Where each piece of `public/js/app.js` went, and how to run it, is documented in
+[`pixelio-web/README.md`](pixelio-web/README.md).
 
 ## 📞 Contact
 

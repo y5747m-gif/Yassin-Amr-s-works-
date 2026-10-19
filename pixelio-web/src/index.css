@@ -1,0 +1,84 @@
+@import 'tailwindcss';
+@import './styles/pixelio.css';
+
+/* Class-based dark mode stays available for Tailwind utilities. The Pixelio
+   site itself is a light-only premium theme — src/styles/pixelio.css (a
+   verbatim copy of the original public/css/style.css) owns the look and, being
+   unlayered, always wins over Tailwind's preflight. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ------------------------------------------------------------------
+   Tokens for the Tailwind-side primitives in src/components/ui.
+   Kept out of the way of the site: no global element rules here, and
+   no custom component classes whose names pixelio.css also uses.
+   ------------------------------------------------------------------ */
+:root {
+  --background: #fcfcf9;
+  --foreground: #111111;
+  --card: #f6f6f2;
+  --card-foreground: #111111;
+  --muted: #f0f0eb;
+  --muted-foreground: #70706c;
+  --border: #e2e2dc;
+  --input: #e2e2dc;
+  --ring: #111111;
+  --primary: #111111;
+  --primary-foreground: #fcfcf9;
+  --secondary: #f0f0eb;
+  --secondary-foreground: #111111;
+  --destructive: #c82828;
+  --brand: #ff5a1f;
+  color-scheme: light;
+}
+
+.dark {
+  --background: #0a0a0a;
+  --foreground: #f2f2ee;
+  --card: #121212;
+  --card-foreground: #f2f2ee;
+  --muted: #1a1a1a;
+  --muted-foreground: #969692;
+  --border: #282828;
+  --input: #282828;
+  --ring: #f2f2ee;
+  --primary: #f2f2ee;
+  --primary-foreground: #0a0a0a;
+  --secondary: #1a1a1a;
+  --secondary-foreground: #f2f2ee;
+  --destructive: #ff6b6b;
+  --brand: #ff6e38;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --font-sans: 'Outfit', 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-arabic: 'Tajawal', 'Cairo', 'Outfit', ui-sans-serif, system-ui, sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-destructive: var(--destructive);
+  --color-brand: var(--brand);
+
+  /* the Pixelio palette, usable as Tailwind utilities too */
+  --color-px-blue: #168cff;
+  --color-px-cyan: #25c7ff;
+  --color-px-violet: #6c3bff;
+  --color-px-pink: #e83baf;
+  --color-px-ink: #14294a;
+
+  --radius-4xl: 24px;
+  --tracking-tightest: -0.045em;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-px: cubic-bezier(0.22, 1, 0.36, 1);
+}
