@@ -247,7 +247,7 @@ reveal/tilt/parallax motion and the `perf-lite` guards.
 ```bash
 node server.js                                  # API + the vanilla page (:3000)
 cd pixelio-web && npm install && npm run dev     # the React app (:5173, /api proxied)
-npm run test:render                             # build + render in jsdom, 66 structure checks
+npm run test:render                             # build + render in jsdom, 70 structure checks
 ```
 
 Where each piece of `public/js/app.js` went, and how to run it, is documented in
